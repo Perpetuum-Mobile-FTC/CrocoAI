@@ -1,0 +1,10 @@
+node_modules/
+data/
+.env*
+!.env.example
+*.log
+test/*.db
+test/*.db-wal
+test/*.db-shm
+test/backups/
+test/._routes_test_documents/

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#000200">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CrocoAI">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preload" href="/fonts/rajdhani-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <title>CrocoAI — Conectare</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    /* Scrolls freely (landscape, open keyboard); centered only when it fits. */
+    body.login-page {
+      display: flex; justify-content: center; align-items: center;
+      min-height: 100vh; min-height: 100dvh;
+      padding: max(16px, env(safe-area-inset-top)) max(0px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(0px, env(safe-area-inset-left));
+    }
+    body.login-page::before {
+      content: '';
+      position: fixed; inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 50%, rgba(109, 180, 62, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(36, 112, 66, 0.04) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(109, 180, 62, 0.03) 0%, transparent 50%);
+      z-index: 0; pointer-events: none;
+    }
+    .login-box {
+      position: relative; z-index: 1;
+      background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-xl);
+      padding: 40px 36px; width: 100%; max-width: 400px; margin: auto 16px;
+    }
+    .login-logo { text-align: center; margin-bottom: 28px; }
+    .login-logo h1 {
+      font-size: 2.4em; font-weight: 700; color: var(--primary); text-shadow: 0 0 30px var(--primary-glow);
+      letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px;
+    }
+    .login-logo .subtitle { color: var(--text-muted); font-size: 0.9em; letter-spacing: 2px; text-transform: uppercase; font-weight: 500; }
+    .login-logo .croco-icon { font-size: 3em; display: block; margin-bottom: 8px; filter: drop-shadow(0 0 10px rgba(109, 180, 62, 0.3)); }
+    .login-box .form { gap: 14px; margin-bottom: 0; }
+    .login-box .input { padding: 14px 18px; background: var(--bg-dark); width: 100%; }
+    .login-box .btn[type="submit"] { width: 100%; padding: 14px; font-size: 1.05em; margin-top: 6px; letter-spacing: 2px; }
+    .login-error { color: #ff8a8a; text-align: center; font-size: 0.95em; min-height: 20px; margin-top: 4px; font-weight: 600; }
+    .change-pw-section { display: none; }
+    .change-pw-section.active { display: block; }
+    .login-form-section.hidden { display: none; }
+    .pw-warning {
+      color: var(--warning); text-align: center; margin-bottom: 16px; font-weight: 600; padding: 10px;
+      background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius);
+    }
+    .login-alt { text-align: center; margin-top: 16px; font-size: 0.95em; color: var(--text-muted); }
+    @media (max-width: 480px) {
+      .login-box { padding: 28px 20px; }
+      .login-logo { margin-bottom: 20px; }
+      .login-logo h1 { font-size: 2em; }
+    }
+    @media (max-height: 500px) {
+      .login-logo { margin-bottom: 12px; }
+      .login-logo .croco-icon { font-size: 2em; margin-bottom: 0; }
+      .login-logo h1 { font-size: 1.6em; }
+      .login-box { padding: 20px 24px; }
+    }
+  </style>
+</head>
+<body class="login-page">
+  <main class="login-box">
+    <div class="login-logo">
+      <span class="croco-icon" aria-hidden="true">&#x1F40A;</span>
+      <h1>CrocoAI</h1>
+      <p class="subtitle">{{TEAM_NAME}}</p>
+    </div>
+
+    <!-- Login Form -->
+    <section id="login-section" class="login-form-section">
+      <form class="form" id="login-form" method="post" novalidate>
+        <label class="sr-only" for="phone">Utilizator</label>
+        <input type="text" id="phone" name="username" placeholder="username sau telefon" class="input"
+          autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        <label class="sr-only" for="password">Parolă</label>
+        <div class="password-field">
+          <input type="password" id="password" name="password" placeholder="Parolă" class="input" autocomplete="current-password" required>
+          <button type="button" class="pw-toggle" data-pw-toggle="password" aria-label="Arată parola" aria-pressed="false">Arată</button>
+        </div>
+        <button class="btn" type="submit" id="login-btn">Conectează-te</button>
+        <div class="login-error" id="error" role="alert"></div>
+      </form>
+      <p class="login-alt"><a href="/inscriere" class="text-link">Nu ai cont? Înregistrează-te</a></p>
+    </section>
+
+    <!-- Change Password Form -->
+    <section id="change-pw-section" class="change-pw-section">
+      <p class="pw-warning">Trebuie să îți schimbi parola la prima conectare.</p>
+      <form class="form" id="change-pw-form" method="post" novalidate>
+        <input type="text" name="username" autocomplete="username" class="hidden" tabindex="-1" aria-hidden="true">
+        <label class="sr-only" for="new-password">Parolă nouă</label>
+        <div class="password-field">
+          <input type="password" id="new-password" placeholder="Parolă nouă (minim 8 caractere)" class="input" autocomplete="new-password">
+          <button type="button" class="pw-toggle" data-pw-toggle="new-password" aria-label="Arată parola" aria-pressed="false">Arată</button>
+        </div>
+        <label class="sr-only" for="confirm-password">Confirmă parola</label>
+        <input type="password" id="confirm-password" placeholder="Confirmă parola" class="input" autocomplete="new-password">
+        <button class="btn" type="submit" id="change-pw-btn">Salvează parola</button>
+        <div class="login-error" id="pw-error" role="alert"></div>
+      </form>
+    </section>
+  </main>
+
+  <script src="/js/safe-next.js"></script>
+  <script src="/js/login.js"></script>
+  <script src="/js/pwa.js" defer></script>
+</body>
+</html>

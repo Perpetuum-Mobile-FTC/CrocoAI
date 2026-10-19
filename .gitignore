@@ -1,0 +1,12 @@
+.DS_Store
+
+# Ops (package E): secrets + host-side state of the server checkout (/mnt/Data/crocoai)
+.env*
+!.env.example
+/rclone/
+/backup.log
+/health.log
+/.health-state
+/.backup-age-cache
+/ops.env
+/app/data/

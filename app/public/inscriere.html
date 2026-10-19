@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#000200">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" href="/icons/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CrocoAI">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preload" href="/fonts/rajdhani-600-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <title>CrocoAI - Înregistrare</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body { display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; padding: 24px 0 60px; }
+    .reg-box {
+      position: relative;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 32px 24px;
+      width: 100%;
+      max-width: 560px;
+      margin: 0 16px;
+    }
+    .login-logo { text-align: center; margin-bottom: 24px; }
+    .login-logo h1 { font-size: 2em; font-weight: 700; color: var(--primary); text-shadow: 0 0 30px var(--primary-glow); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
+    .login-logo .subtitle { color: var(--text-muted); font-size: 0.9em; letter-spacing: 2px; text-transform: uppercase; font-weight: 500; }
+    .login-logo .croco-icon { font-size: 2.6em; display: block; margin-bottom: 8px; }
+    .reg-box h2 { margin: 20px 0 10px; font-size: 1.1em; color: var(--text-main); }
+    .reg-box .form { gap: 10px; }
+    .reg-box .input, .reg-box select, .reg-box textarea { padding: 12px 16px; font-size: 1em; background: var(--bg-dark); border-radius: var(--radius); width: 100%; box-sizing: border-box; font-family: inherit; }
+    textarea.input { resize: vertical; min-height: 80px; }
+    .field-error { color: #ff8a8a; font-size: 0.9em; margin: -4px 0 2px 2px; }
+    .field-error:empty { display: none; }
+    #student-section, #guardian-section, #department-wrap, #motivation-wrap { display: flex; flex-direction: column; gap: 10px; }
+    #guardian-section.hidden, .hidden { display: none !important; }
+    .input[aria-invalid="true"] { border-color: var(--danger); }
+    .checkbox-row { display: flex; align-items: flex-start; gap: 8px; font-size: 0.88em; color: var(--text-muted); margin-top: 6px; }
+    .checkbox-row input { margin-top: 3px; accent-color: var(--primary); }
+    .checkbox-row a { color: var(--primary); }
+    #guardian-section { border: 1px solid var(--border); border-radius: var(--radius); padding: 12px; margin-top: 4px; }
+    #guardian-section.hidden { display: none; }
+    .reg-box .btn { width: 100%; padding: 14px; font-size: 1.05em; margin-top: 10px; }
+    .login-error { color: var(--danger); text-align: center; font-size: 0.9em; min-height: 20px; margin-top: 8px; font-weight: 600; }
+    .honeypot { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+    .success-box { text-align: center; padding: 20px 0; }
+    .success-box .croco-icon { font-size: 2.4em; display: block; margin-bottom: 12px; }
+    .footer-note { text-align: center; font-size: 0.72em; color: var(--text-dim); margin-top: 20px; }
+    .footer-note a { color: var(--text-muted); }
+    .hidden { display: none !important; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 50; padding: 16px; }
+    .gdpr-modal-box { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; max-width: 600px; max-height: 80vh; overflow-y: auto; white-space: pre-wrap; font-size: 0.9em; line-height: 1.5; }
+    .gdpr-modal-box button { margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <div class="reg-box">
+    <div class="login-logo">
+      <span class="croco-icon">&#x1F40A;</span>
+      <h1>CrocoAI</h1>
+      <p class="subtitle">{{TEAM_NAME}}</p>
+    </div>
+
+    <div id="form-section">
+      <h2 style="margin-top:0">Înregistrare în platforma echipei</h2>
+      <p class="muted small" style="margin-bottom:10px">Un singur formular pentru toată echipa. După ce confirmi codul primit pe WhatsApp, contul e activ, cu username-ul și parola alese de tine. Datele de contact rămân vizibile doar conducerii echipei.</p>
+      <form class="form" id="reg-form" novalidate>
+        <input type="text" name="website" id="website" class="honeypot" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+        <label class="field-label" for="role_choice">Cine ești în echipă</label>
+        <select class="input" id="role_choice">
+          <option value="">Cine ești în echipă?*</option>
+          <option value="recrut">Recrut nou</option>
+          <option value="membru">Membru</option>
+          <option value="head_tech">Șef Departament Tehnic</option>
+          <option value="head_nontech">Șef Departament Non-Tehnic</option>
+          <option value="co_leader">Co-Leader</option>
+          <option value="team_leader">Team Leader</option>
+          <option value="mentor">Mentor</option>
+        </select>
+        <div class="field-error" id="err-role_choice"></div>
+        <p class="muted small hidden" id="role-note">Rolurile de conducere și de mentor se confirmă de Team Leader / Co-Leader; până atunci contul tău e de Membru.</p>
+
+        <label class="field-label" for="full_name">Nume complet*</label>
+        <input class="input" id="full_name" autocomplete="name">
+        <div class="field-error" id="err-full_name"></div>
+
+        <label class="field-label" for="phone">Telefon (WhatsApp)*</label>
+        <input class="input" id="phone" type="tel" autocomplete="tel" inputmode="tel">
+        <div class="field-error" id="err-phone"></div>
+
+        <label class="field-label" for="email">Email*</label>
+        <input class="input" id="email" type="email" autocomplete="email">
+        <div class="field-error" id="err-email"></div>
+
+        <div id="student-section">
+          <label class="field-label" for="school">Școala</label>
+          <select class="input" id="school">
+            <option value="">Școala*</option>
+            {{SCHOOL_OPTIONS}}
+          </select>
+          <div class="field-error" id="err-school"></div>
+          <label class="field-label hidden" id="school_other_label" for="school_other">Numele școlii*</label>
+          <input class="input hidden" id="school_other">
+          <div class="field-error" id="err-school_other"></div>
+          <p class="muted small hidden" id="email-note"></p>
+
+          <label class="field-label" for="class">Clasă (ex: a IX-a B)*</label>
+          <input class="input" id="class" autocomplete="off">
+          <div class="field-error" id="err-class"></div>
+
+          <label for="birthdate" class="field-label">Data nașterii*</label>
+          <input class="input" id="birthdate" type="date" aria-label="Data nașterii">
+          <div class="field-error" id="err-birthdate"></div>
+
+          <div id="department-wrap">
+            <label class="field-label" for="department">Departament</label>
+            <select class="input" id="department">
+              <option value="">Departament*</option>
+              <option value="tehnic">Tehnic</option>
+              <option value="non-tehnic">Non-tehnic</option>
+              <option value="ambele">Ambele</option>
+            </select>
+            <div class="field-error" id="err-department"></div>
+          </div>
+
+          <div id="guardian-section" class="hidden">
+            <h2 style="margin-top:0">Date părinte/tutore (obligatoriu pentru minori)</h2>
+            <label class="field-label" for="guardian_name">Nume părinte/tutore*</label>
+            <input class="input" id="guardian_name" autocomplete="off">
+            <div class="field-error" id="err-guardian_name"></div>
+            <label class="field-label" for="guardian_relation">Relația părintelui/tutorelui</label>
+            <select class="input" id="guardian_relation">
+              <option value="">Relație*</option>
+              <option value="mama">Mamă</option>
+              <option value="tata">Tată</option>
+              <option value="tutore">Tutore</option>
+              <option value="altul">Altul</option>
+            </select>
+            <div class="field-error" id="err-guardian_relation"></div>
+            <label class="field-label" for="guardian_phone">Telefon părinte/tutore*</label>
+            <input class="input" id="guardian_phone" type="tel" inputmode="tel" autocomplete="off">
+            <div class="field-error" id="err-guardian_phone"></div>
+            <label class="field-label" for="guardian_email">Email părinte/tutore (opțional)</label>
+            <input class="input" id="guardian_email" type="email" autocomplete="off">
+            <div class="field-error" id="err-guardian_email"></div>
+          </div>
+        </div>
+
+        <div id="motivation-wrap" class="hidden">
+          <label class="field-label" for="motivation">De ce vrei să intri în echipă?*</label>
+          <textarea class="input" id="motivation" maxlength="1000"></textarea>
+          <div class="field-error" id="err-motivation"></div>
+        </div>
+
+        <h2>Contul tău</h2>
+        <label class="field-label" for="username">Username* (litere mici, cifre, . -)</label>
+        <input class="input" id="username" autocapitalize="none" spellcheck="false" autocomplete="username">
+        <div class="field-error" id="err-username"></div>
+        <label class="field-label" for="password">Parolă* (minim 8 caractere)</label>
+        <input class="input" id="password" type="password" autocomplete="new-password">
+        <div class="field-error" id="err-password"></div>
+        <label class="field-label" for="password_confirm">Repetă parola*</label>
+        <input class="input" id="password_confirm" type="password" autocomplete="new-password">
+        <div class="field-error" id="err-password_confirm"></div>
+
+        <div class="checkbox-row">
+          <input type="checkbox" id="gdpr_ack">
+          <label for="gdpr_ack">Am citit <a href="#" id="open-gdpr">informarea privind prelucrarea datelor</a>*</label>
+        </div>
+        <div class="field-error" id="err-gdpr_ack"></div>
+
+        <div class="checkbox-row hidden" id="guardian-ack-row">
+          <input type="checkbox" id="guardian_ack">
+          <label for="guardian_ack">Părintele/tutorele meu a citit informarea și este de acord*</label>
+        </div>
+        <div class="field-error" id="err-guardian_ack"></div>
+
+        <p class="muted small">Acordurile de mai sus nu înlocuiesc documentele semnate (Anexa 5, Anexa 6 etc.) — ți se va cere să le semnezi în platformă.</p>
+
+        <button class="btn" id="submit-btn" type="button">Creează contul</button>
+        <div class="login-error" id="form-error"></div>
+        <p class="muted small" style="text-align:center">Ai deja cont? <a href="/login" style="color:var(--primary)">Autentifică-te</a></p>
+      </form>
+    </div>
+
+    <div id="code-section" class="hidden">
+      <h2 style="margin-top:0">Confirmă numărul de telefon</h2>
+      <p class="muted small">Ți-am trimis pe WhatsApp un cod de 6 cifre la numărul care se termină în <strong id="code-phone"></strong>. Codul e valabil <span id="code-ttl">10</span> minute.</p>
+      <div class="form">
+        <label class="field-label" for="code">Codul din WhatsApp</label>
+        <input class="input" id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+        <button class="btn" id="verify-btn" type="button">Confirmă și creează contul</button>
+        <div class="login-error" id="code-error"></div>
+        <p class="muted small" id="code-info" style="text-align:center"></p>
+        <button class="btn btn-ghost" id="resend-btn" type="button" disabled>Retrimite codul</button>
+        <p class="muted small" style="text-align:center"><a href="#" id="change-data-btn" style="color:var(--primary)">Modifică datele din formular</a></p>
+      </div>
+    </div>
+
+    <div class="footer-note" id="footer-note"></div>
+  </div>
+
+<script src="/js/inscriere.js"></script>
+<script src="/js/pwa.js" defer></script>
+</body>
+</html>
