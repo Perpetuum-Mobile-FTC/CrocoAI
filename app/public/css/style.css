@@ -956,3 +956,7 @@ a.btn, a.btn:hover { text-decoration: none; }
   .stack-table td[data-label]::before { content: attr(data-label) ": "; color: var(--text-muted); font-size: 0.85em; }
   .stack-table td.stack-action { padding-top: 8px; }
 }
+
+/* License attribution on the login page (NOTICE.md) */
+.credit { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
+.credit a { color: inherit; text-decoration: underline; display: inline-block; min-height: 44px; line-height: 44px; }

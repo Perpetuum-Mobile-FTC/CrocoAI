@@ -12,6 +12,9 @@ An AI assistant, "the crocodile", answers on WhatsApp and in the web app.
 > manualul FTC. Interfața e în română. Platforma funcționează și fără AI (vezi
 > [Fără AI](#using-it-without-ai)).
 
+> **Using CrocoAI in your team?** Keep the "Bazat pe CrocoAI de Perpetuum Mobile #17870" line, and FTC teams must
+> credit us in their engineering portfolio. See [Attribution](#attribution-if-your-team-uses-crocoai).
+
 | Home (team leader) | Assignment review (head of department) |
 |---|---|
 | ![Home](docs/img/home-desktop.png) | ![Assignment](docs/img/tema-desktop.png) |
@@ -40,6 +43,7 @@ An AI assistant, "the crocodile", answers on WhatsApp and in the web app.
 - [Architecture](#architecture)
 - [Adapting it for your team](#adapting-it-for-your-team)
 - [Development](#development)
+- [Attribution](#attribution-if-your-team-uses-crocoai)
 - [License](#license)
 
 ---
@@ -297,9 +301,25 @@ npm test                 # ~800 tests, ~30 s; the AI is always mocked, no networ
 See [CONTRIBUTING.md](CONTRIBUTING.md). Please report security issues privately, as described in
 [SECURITY.md](SECURITY.md): the platform stores data about minors.
 
+## Attribution: if your team uses CrocoAI
+
+> 🇷🇴 **Dacă echipa voastră folosește CrocoAI** (codul, părți din el sau ideea), trebuie să menționați echipa
+> **Perpetuum Mobile #17870** în **portofoliul tehnic** (engineering portfolio) și când prezentați platforma
+> jurizării. Spuneți ce ați preluat de la noi și ce ați construit voi. Mențiunea „Bazat pe CrocoAI de Perpetuum
+> Mobile #17870” de pe pagina de login trebuie să rămână. Detalii în [NOTICE.md](NOTICE.md).
+
+Two rules apply to anyone who uses CrocoAI:
+
+1. **Keep the attribution.** The line *"Bazat pe CrocoAI de Perpetuum Mobile #17870"* on the login page and in your
+   docs must stay. This is an additional term of the license (AGPL-3.0 §7(b)).
+2. **FTC teams: credit us in your engineering portfolio.** Say that the idea and/or code comes from Perpetuum Mobile
+   #17870, and what you changed. Gracious Professionalism® means presenting your own work honestly to judges.
+
+See [NOTICE.md](NOTICE.md) for the exact wording.
+
 ## License
 
-[GNU AGPL-3.0](LICENSE). You may use, modify and host CrocoAI. If you run a modified version for other people,
+[GNU AGPL-3.0](LICENSE), with the attribution requirement in [NOTICE.md](NOTICE.md). You may use, modify and host CrocoAI. If you run a modified version for other people,
 you must publish your changes under the same license.
 
 Made with 🐊 by Perpetuum Mobile. FIRST® and FIRST® Tech Challenge are trademarks of FIRST®. This project is not
