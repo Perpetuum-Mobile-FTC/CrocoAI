@@ -10,6 +10,7 @@ const profile = require("../domain/profile");
 const membersSvc = require("./members");
 const onboardingSvc = require("./onboarding");
 const documentsSvc = require("./documents");
+const regulament = require("./regulament");
 const notifications = require("./notifications");
 const audience = require("./audience");
 const waGateway = require("./wa-gateway");
@@ -40,14 +41,14 @@ function create(input, ip) {
 
   const now = new Date().toISOString();
   const info = db.prepare(`
-    INSERT INTO applications (full_name, phone, email, birthdate, class, school, department,
+    INSERT INTO applications (full_name, first_name, last_name, phone, email, birthdate, class, school, department,
       guardian_name, guardian_relation, guardian_phone, guardian_email, motivation, source,
-      gdpr_ack_at, guardian_ack_at, ip_hash)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      gdpr_ack_at, guardian_ack_at, regulament_ack_at, regulament_version, ip_hash)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
-    v.full_name, v.phone, v.email, v.birthdate, v.class, v.school, v.department,
+    v.full_name, v.first_name || null, v.last_name || null, v.phone, v.email, v.birthdate, v.class, v.school, v.department,
     v.guardian_name || null, v.guardian_relation || null, v.guardian_phone || null, v.guardian_email || null,
-    v.motivation, v.source || null, now, v.is_minor ? now : null, hashIp(ip)
+    v.motivation, v.source || null, now, v.is_minor ? now : null, now, regulament.version(), hashIp(ip)
   );
 
   for (const l of audience.activeLeaders()) {
@@ -85,8 +86,10 @@ async function accept(actor, id, { buddy_id, note } = {}) {
     throw new DomainError("INVALID", "Există deja un membru cu acest telefon.");
   }
 
+  // Applications stored before the name parts (migration 029) only have full_name.
+  const names = app.first_name && app.last_name ? { first_name: app.first_name, last_name: app.last_name } : { name: app.full_name };
   const created = membersSvc.create(actor, {
-    name: app.full_name, phone: app.phone, email: app.email, department: app.department,
+    ...names, phone: app.phone, email: app.email, department: app.department,
     class: app.class, school: app.school, birthdate: app.birthdate, role: "volunteer",
   });
   const { password } = membersSvc.resetPassword(actor, created.id);
@@ -98,6 +101,11 @@ async function accept(actor, id, { buddy_id, note } = {}) {
     UPDATE applications SET status='acceptata', decided_by=?, decided_at=strftime('%Y-%m-%dT%H:%M:%fZ','now'), decision_note=?, created_member_id=?
     WHERE id=?
   `).run(actor.id, note || null, created.id, id);
+
+  // Art. 72.3: accepted on the application form (older applications have no box and still sign Anexa 6).
+  if (app.regulament_ack_at) {
+    documentsSvc.recordRegulamentAcceptance(created.id, { at: app.regulament_ack_at, version: app.regulament_version, guardian: !!app.guardian_ack_at });
+  }
 
   const fresh = membersSvc.getRaw(created.id);
   const requiredDocs = documentsSvc.requiredFor(fresh);

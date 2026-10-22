@@ -7,6 +7,7 @@ const { wrap } = require("../middleware/error-handler");
 const applicationsSvc = require("../services/applications");
 const completionSvc = require("../services/completion");
 const registrationSvc = require("../services/registration");
+const regulamentSvc = require("../services/regulament");
 const { setAuthCookie } = require("../middleware/auth");
 const { ipKey } = require("../domain/ip"); // limits per IPv4 / per IPv6 /64
 const { createRateLimiter, createWindowCounter } = require("../middleware/rate-limit");
@@ -93,6 +94,11 @@ router.get("/informare", wrap((req, res) => {
   const raw = fs.readFileSync(file, "utf8");
   const m = raw.match(/^<!--\s*versiune:\s*(.+?)\s*\|\s*data:\s*(.+?)\s*-->\r?\n?/);
   res.json({ version: m ? m[1] : null, date: m ? m[2] : null, content: m ? raw.slice(m[0].length) : raw });
+}));
+
+// Art. 72.3: the regulament the sign-up box accepts - readable before the account exists.
+router.get("/regulament", wrap((req, res) => {
+  res.json({ version: regulamentSvc.version(), content: regulamentSvc.publicText() });
 }));
 
 module.exports = router;

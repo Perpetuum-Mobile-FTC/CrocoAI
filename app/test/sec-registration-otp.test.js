@@ -20,7 +20,7 @@ function student(over = {}) {
     role_choice: "membru", full_name: "Ana Popescu", phone: `4074${String(1000000 + seq)}`,
     username: `otp.user${seq}`, password: "parola1234", password_confirm: "parola1234",
     email: `otp${seq}@eminescusm.ro`, school: "CN Mihai Eminescu", class: "a XI-a B",
-    birthdate: yearsAgo(18), department: "tehnic", gdpr_ack: true, ...over,
+    birthdate: yearsAgo(18), department: "tehnic", gdpr_ack: true, regulament_ack: true, ...over,
   };
 }
 const post = (url, body, ip) => fetch(`${BASE}/api/public${url}`, {
@@ -220,7 +220,7 @@ test("A3: a phone changed through a public completion link is no longer verified
   const [m] = Object.values(makeMembers(db, [{ key: "cmp", role: "member" }]));
   const { url } = completion.createLink(M.tl, m.id);
   const token = url.split("/completare/")[1];
-  const form = { full_name: "Ana Completare", email: "ana.c@exemplu.ro", birthdate: yearsAgo(19), class: "a XII-a", school: "Liceu", department: "tehnic", gdpr_ack: true };
+  const form = { full_name: "Ana Completare", email: "ana.c@exemplu.ro", birthdate: yearsAgo(19), class: "a XII-a", school: "Liceu", department: "tehnic", gdpr_ack: true, regulament_ack: true };
   await completion.submit(token, { ...form, phone: m.phone }); // same phone -> stays verified
   assert.ok(db.prepare("SELECT phone_verified_at FROM members WHERE id = ?").get(m.id).phone_verified_at);
   const { url: url2 } = completion.createLink(M.tl, m.id);

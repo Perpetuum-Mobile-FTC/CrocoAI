@@ -116,11 +116,27 @@ function review(actor, docId, status, note) {
   return db.prepare("SELECT * FROM member_documents WHERE id = ?").get(docId);
 }
 
+// Art. 72.3: the regulament box ticked when the account was created counts as a signed Anexa 6. Stored as an
+// approved anexa6_regulament row without a file - the note keeps the moment and the version accepted. A member who
+// already has an approved Anexa 6 keeps it.
+const REGULAMENT_TYPE = "anexa6_regulament";
+function recordRegulamentAcceptance(memberId, { at, version, guardian }) {
+  const approved = db.prepare("SELECT 1 FROM member_documents WHERE member_id = ? AND type_key = ? AND status = 'aprobat'").get(memberId, REGULAMENT_TYPE);
+  if (approved) return;
+  const note = `Acceptat electronic la crearea contului (Art. 72.3), regulament v${version || "?"}${guardian ? ", cu acordul părintelui/tutorelui" : ""}.`;
+  db.prepare(`
+    INSERT INTO member_documents (member_id, type_key, status, review_note, reviewed_at, uploaded_at)
+    VALUES (?, ?, 'aprobat', ?, ?, ?)
+  `).run(memberId, REGULAMENT_TYPE, note, at, at);
+  try { require("./onboarding").onDocumentApproved(memberId); } catch { /* no active onboarding, ignore */ }
+}
+
 // Returns absolute file path if actor is allowed to download this document.
 function authorizedFilePath(actor, docId) {
   const doc = db.prepare("SELECT * FROM member_documents WHERE id = ?").get(docId);
   if (!doc) throw new DomainError("NOT_FOUND", "Document negăsit.");
   assertCan(actor, "documents.view_file", doc);
+  if (!doc.file_path) throw new DomainError("NOT_FOUND", "Document acceptat electronic, fără fișier (Art. 72.3).");
   // Art. 41.4: access log for medical sheets opened by someone other than the owner (no file content) -
   // persistent in audit_log (TL reads it in Admin), plus one line in the container log.
   if (doc.type_key === "fisa_medicala" && !isSelf(actor, doc.member_id)) {
@@ -199,11 +215,12 @@ function matrix(actor) {
       title: d.title,
       status: d.document ? d.document.status : "lipsa",
       document_id: d.document ? d.document.id : null,
-      can_open: !!d.document && can(actor, "documents.view_file", d.document), // the UI shows „Deschide fișierul” only then
+      can_open: !!d.document && !!d.document.file_path && can(actor, "documents.view_file", d.document), // the UI shows „Deschide fișierul” only then
+      electronic: !!d.document && !d.document.file_path, // Art. 72.3: accepted at sign-up, no file
       uploaded_at: d.document ? d.document.uploaded_at : null,
       review_note: d.document ? d.document.review_note : null,
     })),
   }));
 }
 
-module.exports = { DOCS_DIR, listTypes, getType, requiredFor, myStatus, upload, review, authorizedFilePath, matrix, destroyMedicalRows, removeFiles, destroyMedicalOfLeftMembers };
+module.exports = { DOCS_DIR, listTypes, getType, requiredFor, myStatus, upload, review, authorizedFilePath, recordRegulamentAcceptance, matrix, destroyMedicalRows, removeFiles, destroyMedicalOfLeftMembers };

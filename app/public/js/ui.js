@@ -284,6 +284,16 @@ export function fmtDate(d) {
   if (isNaN(date)) return d;
   return date.toLocaleDateString("ro-RO", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
+// „Văzut ultima dată” (members.last_seen_at, recorded at most hourly): calendar days in Romania's time zone.
+export function fmtSeen(iso, now = new Date()) {
+  if (!iso) return "nicio activitate înregistrată";
+  const day = (d) => new Date(d).toLocaleDateString("en-CA", { timeZone: "Europe/Bucharest" });
+  const days = Math.round((Date.parse(day(now)) - Date.parse(day(iso))) / 86400000);
+  if (days <= 0) return "activ azi";
+  if (days === 1) return "activ ieri";
+  if (days < 30) return `activ acum ${days} ${days < 20 ? "zile" : "de zile"}`;
+  return `activ ultima dată pe ${fmtDate(iso)}`;
+}
 export function fmtDateTime(d) {
   if (!d) return "";
   const date = new Date(d);

@@ -52,6 +52,18 @@ document.getElementById("open-gdpr").addEventListener("click", (e) => {
   overlay.addEventListener("click", (ev) => { if (ev.target === overlay || ev.target.id === "close-gdpr") overlay.remove(); });
 });
 
+// Art. 72.3: the regulament the box accepts, readable in place (same modal as the GDPR notice).
+let regulamentInfo = null;
+fetch("/api/public/regulament").then((r) => r.json()).then((d) => { regulamentInfo = d; }).catch(() => {});
+document.getElementById("open-regulament").addEventListener("click", (e) => {
+  e.preventDefault();
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `<div class="gdpr-modal-box">${esc(regulamentInfo ? regulamentInfo.content : "Se încarcă...")}<br><button class="btn" id="close-regulament">Închide</button></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (ev) => { if (ev.target === overlay || ev.target.id === "close-regulament") overlay.remove(); });
+});
+
 function clearErrors() {
   document.querySelectorAll(".field-error").forEach((el) => (el.textContent = ""));
   document.querySelectorAll("[aria-invalid]").forEach((el) => el.removeAttribute("aria-invalid"));
@@ -88,13 +100,15 @@ document.getElementById("submit-btn").addEventListener("click", async () => {
   const body = {
     website: $("website").value,
     role_choice: role,
-    full_name: $("full_name").value.trim(),
+    first_name: $("first_name").value.trim(),
+    last_name: $("last_name").value.trim(),
     phone: $("phone").value.trim(),
     email: $("email").value.trim(),
     username: $("username").value.trim().toLowerCase(),
     password: $("password").value,
     password_confirm: $("password_confirm").value,
     gdpr_ack: $("gdpr_ack").checked,
+    regulament_ack: $("regulament_ack").checked,
   };
   if (!mentor) {
     body.school = $("school").value;

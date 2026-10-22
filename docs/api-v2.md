@@ -61,16 +61,16 @@ Directory (any authenticated user). 200: `[{ id, name, role, department, status,
 team_ids: [teamId, ...] }]`.
 
 ### GET /api/members/:id
-Full profile. Base fields (`id, name, username, role, department, status, pause_until, joined_at,
-left_at`) always included; `notes` only if actor has `members.manage`. Contact fields (`phone,
+Full profile. Base fields (`id, name, first_name, last_name, username, role, department, status, pause_until, joined_at,
+left_at`) always included (`first_name`/`last_name` are NULL until the name is split - `name` = full_name); `notes` only if actor has `members.manage`. Contact fields (`phone,
 email, birthdate, school, class, guardians`) only if actor is OVERSIGHT or the member themself.
 Also includes `attendance_stats`, `documents`, `warnings` (each omitted if actor lacks permission)
 and `tasks` (tasks assigned to this member, visible to anyone who can see the profile).
 
 ### PATCH /api/members/me
-„Contul meu” (2026-10-19): the logged-in member edits their own `email`, `birthdate`, `school`, `class`
-(`profile.OWN_EDITABLE`, validated by `profile.validateOwnEdit`, policy `members.edit_account`). Partial; other keys
-(name, phone, department, role) are ignored. 200: the profile; 400 with `errors` per field. Password: `POST /api/auth/change-password`.
+„Contul meu” (2026-10-19): the logged-in member edits their own `first_name` + `last_name` (sent together, 2026-10-22),
+`email`, `school`, `class` (`profile.OWN_EDITABLE`, validated by `profile.validateOwnEdit`, policy `members.edit_account`;
+audit `profile.self_edit`). Partial; other keys (full_name, phone, birthdate, department, role) are ignored. 200: the profile; 400 with `errors` per field. Password: `POST /api/auth/change-password`.
 
 ### GET /api/members/:id/guardians · POST /api/members/:id/guardians
 List: `members.view_contacts` (OVERSIGHT or the member themself). Add: `guardians.manage` (LEADERS or the member themself).
@@ -87,13 +87,16 @@ POST body: `{ name, relation?, phone?, email? }`.
 All members with admin-level fields (username, phone, email, role, status, active, etc).
 
 ### POST /api/admin/members
-Body: `{ name, phone?, role?, email?, department?, class?, school?, birthdate? }`. `phone` optional
-(member gets a `pending-...` placeholder phone until set). 200: `{ id, username, password }`
+Body: `{ first_name, last_name, phone?, role?, email?, department?, class?, school?, birthdate? }`.
+Names (2026-10-22, `src/domain/name.js`): each part 1–60 letters/space/hyphen/apostrophe, normalized ("ana-maria" →
+"Ana-Maria"), `full_name` = "Prenume Nume". A legacy single `name` is still accepted (capitalization only, parts NULL). `phone` optional
+(member gets a `pending-...` placeholder phone until set). 200: `{ id, name, username, password }`
 (plaintext default password shown once, to be communicated out-of-band — never auto-displayed on
 subsequent loads).
 
 ### PUT /api/admin/members/:id
-Body: any subset of `{ name, phone, role, email, department, notes, class, school, birthdate }`.
+Body: any subset of `{ first_name + last_name (together), phone, role, email, department, notes, class, school, birthdate }`.
+Legacy `name`: capitalization only; parts kept if it is the same name, cleared otherwise (full_name never disagrees with them).
 
 ### POST /api/admin/members/:id/status
 Body: `{ status: activ|pauza|iesit|alumni, reason?, pause_until? }`. Writes

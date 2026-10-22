@@ -23,7 +23,7 @@ const minorInput = {
 };
 
 test("validateProfile: adult, mode=public, requires motivation + gdpr_ack but no guardian", () => {
-  const r = profile.validateProfile({ ...adultInput, motivation: "Vreau să învăț robotică.", gdpr_ack: true }, { mode: "public" });
+  const r = profile.validateProfile({ ...adultInput, motivation: "Vreau să învăț robotică.", gdpr_ack: true, regulament_ack: true }, { mode: "public" });
   assert.equal(r.ok, true, JSON.stringify(r.errors));
   assert.equal(r.value.is_minor, false);
   assert.equal(r.value.phone, "40722111222");
@@ -31,7 +31,7 @@ test("validateProfile: adult, mode=public, requires motivation + gdpr_ack but no
 });
 
 test("validateProfile: minor, mode=public, requires guardian_* + guardian_ack", () => {
-  const withoutGuardian = profile.validateProfile({ ...minorInput, motivation: "Vreau să intru în echipă.", gdpr_ack: true }, { mode: "public" });
+  const withoutGuardian = profile.validateProfile({ ...minorInput, motivation: "Vreau să intru în echipă.", gdpr_ack: true, regulament_ack: true }, { mode: "public" });
   assert.equal(withoutGuardian.ok, false);
   assert.ok(withoutGuardian.errors.guardian_name);
   assert.ok(withoutGuardian.errors.guardian_relation);
@@ -41,7 +41,7 @@ test("validateProfile: minor, mode=public, requires guardian_* + guardian_ack", 
   const withGuardian = profile.validateProfile({
     ...minorInput,
     motivation: "Vreau să intru în echipă.",
-    gdpr_ack: true,
+    gdpr_ack: true, regulament_ack: true,
     guardian_name: "Elena Ionescu",
     guardian_relation: "mama",
     guardian_phone: "0722111224",
@@ -53,7 +53,7 @@ test("validateProfile: minor, mode=public, requires guardian_* + guardian_ack", 
 });
 
 test("validateProfile: bad email, bad birthdate, missing department all reported together", () => {
-  const r = profile.validateProfile({ ...adultInput, email: "not-an-email", birthdate: "not-a-date", department: "marketing", motivation: "x", gdpr_ack: true }, { mode: "public" });
+  const r = profile.validateProfile({ ...adultInput, email: "not-an-email", birthdate: "not-a-date", department: "marketing", motivation: "x", gdpr_ack: true, regulament_ack: true }, { mode: "public" });
   assert.equal(r.ok, false);
   assert.ok(r.errors.email);
   assert.ok(r.errors.birthdate);
@@ -61,8 +61,8 @@ test("validateProfile: bad email, bad birthdate, missing department all reported
 });
 
 test("validateProfile: phone normalization + duplicate detection is the caller's job (just normalizes here)", () => {
-  const r1 = profile.validateProfile({ ...adultInput, phone: "+40722111222", motivation: "x", gdpr_ack: true }, { mode: "public" });
-  const r2 = profile.validateProfile({ ...adultInput, phone: "0040722111222", motivation: "x", gdpr_ack: true }, { mode: "public" });
+  const r1 = profile.validateProfile({ ...adultInput, phone: "+40722111222", motivation: "x", gdpr_ack: true, regulament_ack: true }, { mode: "public" });
+  const r2 = profile.validateProfile({ ...adultInput, phone: "0040722111222", motivation: "x", gdpr_ack: true, regulament_ack: true }, { mode: "public" });
   assert.equal(r1.value.phone, "40722111222");
   assert.equal(r2.value.phone, "40722111222");
 });
@@ -80,7 +80,7 @@ test("validateProfile: mode=completion requires gdpr_ack but not motivation", ()
   assert.ok(withoutAck.errors.gdpr_ack);
   assert.equal(withoutAck.errors.motivation, undefined);
 
-  const withAck = profile.validateProfile({ ...adultInput, gdpr_ack: true }, { mode: "completion" });
+  const withAck = profile.validateProfile({ ...adultInput, gdpr_ack: true, regulament_ack: true }, { mode: "completion" });
   assert.equal(withAck.ok, true, JSON.stringify(withAck.errors));
 });
 

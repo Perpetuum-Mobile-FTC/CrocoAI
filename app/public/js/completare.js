@@ -31,7 +31,8 @@ fetch("/api/public/informare").then((r) => r.json()).then((d) => {
     const data = await res.json();
     document.getElementById("loading-section").classList.add("hidden");
     document.getElementById("form-section").classList.remove("hidden");
-    document.getElementById("full_name").value = data.full_name || "";
+    document.getElementById("first_name").value = data.first_name || ""; // server prefill: parts, or a guess to check
+    document.getElementById("last_name").value = data.last_name || "";
     document.getElementById("phone").value = data.phone || "";
     document.getElementById("email").value = data.email || "";
     document.getElementById("birthdate").value = data.birthdate || "";
@@ -61,6 +62,18 @@ document.getElementById("open-gdpr").addEventListener("click", (e) => {
   overlay.addEventListener("click", (ev) => { if (ev.target === overlay || ev.target.id === "close-gdpr") overlay.remove(); });
 });
 
+// Art. 72.3: the regulament the box accepts, readable in place (same modal as the GDPR notice).
+let regulamentInfo = null;
+fetch("/api/public/regulament").then((r) => r.json()).then((d) => { regulamentInfo = d; }).catch(() => {});
+document.getElementById("open-regulament").addEventListener("click", (e) => {
+  e.preventDefault();
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.innerHTML = `<div class="gdpr-modal-box">${esc(regulamentInfo ? regulamentInfo.content : "Se încarcă...")}<br><button class="btn" id="close-regulament">Închide</button></div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener("click", (ev) => { if (ev.target === overlay || ev.target.id === "close-regulament") overlay.remove(); });
+});
+
 function clearErrors() {
   document.querySelectorAll(".field-error").forEach((el) => (el.textContent = ""));
   document.querySelectorAll("[aria-invalid]").forEach((el) => el.removeAttribute("aria-invalid"));
@@ -73,7 +86,8 @@ document.getElementById("submit-btn").addEventListener("click", async () => {
   const minor = computeIsMinor(document.getElementById("birthdate").value);
   const body = {
     website: document.getElementById("website").value,
-    full_name: document.getElementById("full_name").value.trim(),
+    first_name: document.getElementById("first_name").value.trim(),
+    last_name: document.getElementById("last_name").value.trim(),
     phone: document.getElementById("phone").value.trim(),
     email: document.getElementById("email").value.trim(),
     birthdate: document.getElementById("birthdate").value,
@@ -81,6 +95,7 @@ document.getElementById("submit-btn").addEventListener("click", async () => {
     school: document.getElementById("school").value.trim(),
     department: document.getElementById("department").value,
     gdpr_ack: document.getElementById("gdpr_ack").checked,
+    regulament_ack: document.getElementById("regulament_ack").checked,
   };
   if (minor) {
     body.guardian_name = document.getElementById("guardian_name").value.trim();

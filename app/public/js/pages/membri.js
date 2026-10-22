@@ -1,5 +1,5 @@
 import { api } from "../api.js";
-import { esc, loadingHtml, errorHtml, emptyHtml, toast, openModal, confirmDialog, busyOnClick, fileField, showOneTimePassword } from "../ui.js";
+import { esc, fmtSeen, loadingHtml, errorHtml, emptyHtml, toast, openModal, confirmDialog, busyOnClick, fileField, showOneTimePassword } from "../ui.js";
 import { can, ROLE_NAMES } from "../app.js";
 import { DEPT_LABELS, STATUS_LABELS } from "./membri-labels.js";
 
@@ -84,7 +84,8 @@ function openStartOnboardingModal(members, onSaved) {
   const modal = openModal(`
     <h3>Voluntar nou — pornește integrarea</h3>
     <div class="form">
-      <input class="input" id="ob-name" aria-label="Nume complet" placeholder="Nume complet">
+      <input class="input" id="ob-first" aria-label="Prenume" placeholder="Prenume" autocomplete="off">
+      <input class="input" id="ob-last" aria-label="Nume de familie" placeholder="Nume de familie" autocomplete="off">
       <input class="input" id="ob-phone" aria-label="Telefon (WhatsApp)" placeholder="Telefon (WhatsApp)">
       <select class="input" id="ob-dept" aria-label="Departament"><option value="ambele">Ambele</option><option value="tehnic">Tehnic</option><option value="non-tehnic">Non-tehnic</option></select>
       <select class="input" id="ob-buddy" aria-label="Buddy"><option value="">Fără buddy</option>${buddyOptions}</select>
@@ -94,13 +95,13 @@ function openStartOnboardingModal(members, onSaved) {
   busyOnClick(modal.el.querySelector("#ob-save"), async () => {
     const errEl = modal.el.querySelector("#ob-error");
     errEl.textContent = "";
-    const name = modal.el.querySelector("#ob-name").value.trim();
     const phone = modal.el.querySelector("#ob-phone").value.trim();
-    if (!name || !phone) { errEl.textContent = "Numele și telefonul sunt obligatorii."; return; }
     const buddyId = modal.el.querySelector("#ob-buddy").value;
     try {
       await api.post("/api/onboarding", {
-        name, phone,
+        first_name: modal.el.querySelector("#ob-first").value.trim(),
+        last_name: modal.el.querySelector("#ob-last").value.trim(),
+        phone,
         department: modal.el.querySelector("#ob-dept").value,
         buddy_id: buddyId ? Number(buddyId) : undefined,
       });
@@ -123,6 +124,7 @@ function renderList(listEl, members, missingById, isLeader) {
           <div>
             <strong>${esc(m.name)}</strong>
             <div class="muted small">${esc(ROLE_NAMES[m.role] || m.role)}${m.department ? " · " + esc(DEPT_LABELS[m.department] || m.department) : ""}</div>
+            ${"last_seen_at" in m ? `<div class="muted small">${esc(fmtSeen(m.last_seen_at))}</div>` : ""}
           </div>
         </a>
         <div class="list-item-meta">
@@ -150,7 +152,8 @@ function openAddMemberModal(onSaved) {
   const modal = openModal(`
     <h3>Membru nou</h3>
     <div class="form">
-      <input class="input" id="am-name" aria-label="Nume complet" placeholder="Nume complet">
+      <input class="input" id="am-first" aria-label="Prenume" placeholder="Prenume" autocomplete="off">
+      <input class="input" id="am-last" aria-label="Nume de familie" placeholder="Nume de familie" autocomplete="off">
       <input class="input" id="am-phone" aria-label="Telefon (opțional)" placeholder="Telefon (opțional)">
       <select class="input" id="am-role" aria-label="Rol">${Object.entries(ROLE_NAMES).map(([k, v]) => `<option value="${k}" ${k === "member" ? "selected" : ""}>${v}</option>`).join("")}</select>
       <select class="input" id="am-dept" aria-label="Departament"><option value="">Departament</option>${Object.entries(DEPT_LABELS).map(([k, v]) => `<option value="${k}">${v}</option>`).join("")}</select>
@@ -160,10 +163,9 @@ function openAddMemberModal(onSaved) {
   busyOnClick(modal.el.querySelector("#am-save"), async () => {
     const errEl = modal.el.querySelector("#am-error");
     errEl.textContent = "";
-    const name = modal.el.querySelector("#am-name").value.trim();
-    if (!name) { errEl.textContent = "Numele e obligatoriu."; return; }
     const body = {
-      name,
+      first_name: modal.el.querySelector("#am-first").value.trim(),
+      last_name: modal.el.querySelector("#am-last").value.trim(),
       phone: modal.el.querySelector("#am-phone").value.trim() || undefined,
       role: modal.el.querySelector("#am-role").value,
       department: modal.el.querySelector("#am-dept").value || undefined,
@@ -172,7 +174,7 @@ function openAddMemberModal(onSaved) {
       const res = await api.post("/api/admin/members", body);
       modal.close();
       onSaved();
-      await showOneTimePassword({ title: "Membru creat", intro: name, username: res.username, password: res.password });
+      await showOneTimePassword({ title: "Membru creat", intro: res.name, username: res.username, password: res.password });
     } catch (e) { errEl.textContent = e.message; }
   });
 }

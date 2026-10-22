@@ -1,5 +1,5 @@
 import { api } from "../api.js";
-import { esc, fmtDate, fmtPct, loadingHtml, errorHtml, emptyHtml, toast, openModal, confirmDialog, busyOnClick, linkifyArticles, showOneTimePassword } from "../ui.js";
+import { esc, fmtDate, fmtSeen, fmtPct, loadingHtml, errorHtml, emptyHtml, toast, openModal, confirmDialog, busyOnClick, linkifyArticles, showOneTimePassword } from "../ui.js";
 import { currentUser, can, ROLE_NAMES } from "../app.js";
 import { STATUS_LABELS, DEPT_LABELS, DOC_STATUS_LABELS, TASK_STATUS_LABELS, fmtPhone } from "./membri-labels.js";
 
@@ -77,15 +77,33 @@ export async function mountMembruProfil(container, id) {
   }
 }
 
+// Prenume / Nume de familie for an edit form: the stored parts, or (not split yet) a guess - last word = family
+// name - that the person checks before saving (the server never splits a name on its own).
+function namePrefill(m) {
+  if (m.first_name || m.last_name) return { first: m.first_name || "", last: m.last_name || "" };
+  const words = String(m.name || "").trim().split(/\s+/).filter(Boolean);
+  return words.length < 2 ? { first: words[0] || "", last: "" } : { first: words.slice(0, -1).join(" "), last: words[words.length - 1] };
+}
+
+function nameFields(prefix, m) {
+  const n = namePrefill(m);
+  return `<label class="field-label" for="${prefix}-first">Prenume</label>
+      <input class="input" id="${prefix}-first" autocomplete="given-name" maxlength="60" value="${esc(n.first)}">
+      <label class="field-label" for="${prefix}-last">Nume de familie</label>
+      <input class="input" id="${prefix}-last" autocomplete="family-name" maxlength="60" value="${esc(n.last)}">
+      ${m.first_name || m.last_name ? "" : `<p class="muted small">Prenumele și numele de familie sunt propuse din numele complet — verifică-le, se salvează așa.</p>`}`;
+}
+
 // „Contul meu”: the fields a member edits on themselves (server: members.updateOwn / profile.OWN_EDITABLE).
 function openEditOwnModal(m, onSaved) {
   const modal = openModal(`
     <h3>Datele mele</h3>
     <form class="form" id="own-form">
+      ${nameFields("own", m)}
       <label class="field-label">Email<input class="input" type="email" id="own-email" autocomplete="email" value="${esc(m.email || "")}"></label>
       <label class="field-label">Școală<input class="input" id="own-school" value="${esc(m.school || "")}"></label>
       <label class="field-label">Clasă<input class="input" id="own-class" value="${esc(m.class || "")}"></label>
-      <p class="muted small">Numele, telefonul, data nașterii și departamentul le schimbă un lider al echipei.</p>
+      <p class="muted small">Numele se scrie „Prenume Nume”, cu majusculă doar la început. Telefonul, data nașterii și departamentul le schimbă un lider al echipei.</p>
       <button class="btn" type="submit" id="own-save">Salvează</button>
       <div class="form-error" id="own-error" role="alert"></div>
     </form>`);
@@ -98,6 +116,8 @@ function openEditOwnModal(m, onSaved) {
     el.querySelector("#own-error").textContent = "";
     try {
       await api.patch("/api/members/me", {
+        first_name: el.querySelector("#own-first").value.trim(),
+        last_name: el.querySelector("#own-last").value.trim(),
         email: el.querySelector("#own-email").value.trim(),
         school: el.querySelector("#own-school").value.trim(),
         class: el.querySelector("#own-class").value.trim(),
@@ -145,7 +165,9 @@ function openChangePasswordModal(m) {
 }
 
 function renderInfo(m, canSeeContacts, isLeader) {
-  const rows = [];
+  const rows = m.first_name || m.last_name
+    ? [["Prenume", esc(m.first_name || "—")], ["Nume de familie", esc(m.last_name || "—")]]
+    : [["Nume", esc(m.name)]];
   if (canSeeContacts) {
     if (m.phone) rows.push(["Telefon", `<a href="tel:+${esc((m.phone || "").replace(/\D/g, ""))}">${esc(fmtPhone(m.phone))}</a> · <a href="https://wa.me/${esc((m.phone || "").replace(/\D/g, ""))}" target="_blank">WhatsApp</a>`]);
     if (m.email) rows.push(["Email", esc(m.email)]);
@@ -154,6 +176,7 @@ function renderInfo(m, canSeeContacts, isLeader) {
     if (m.class) rows.push(["Clasă", esc(m.class)]);
   }
   rows.push(["Membru din", m.joined_at ? fmtDate(m.joined_at) : "—"]);
+  if ("last_seen_at" in m) rows.push(["Văzut ultima dată", fmtSeen(m.last_seen_at)]);
   if (m.left_at) rows.push(["Ieșit la", fmtDate(m.left_at)]);
   if (m.pause_until) rows.push(["Pauză până la", fmtDate(m.pause_until)]);
   if (isLeader && m.notes) rows.push(["Note (interne)", esc(m.notes)]);
@@ -363,7 +386,7 @@ function openEditMemberModal(m, onSaved) {
   const modal = openModal(`
     <h3>Editează membru</h3>
     <div class="form">
-      <input class="input" id="em-name" value="${esc(m.name)}" aria-label="Nume" placeholder="Nume">
+      ${nameFields("em", m)}
       <input class="input" id="em-phone" value="${esc(m.phone || "")}" aria-label="Telefon" placeholder="Telefon">
       <input class="input" id="em-email" value="${esc(m.email || "")}" aria-label="Email" placeholder="Email">
       <select class="input" id="em-role" aria-label="Rol">${Object.entries(ROLE_NAMES).map(([k, v]) => `<option value="${k}" ${k === m.role ? "selected" : ""}>${v}</option>`).join("")}</select>
@@ -386,7 +409,8 @@ function openEditMemberModal(m, onSaved) {
     const errEl = modal.el.querySelector("#em-error");
     errEl.textContent = "";
     const body = {
-      name: modal.el.querySelector("#em-name").value.trim(),
+      first_name: modal.el.querySelector("#em-first").value.trim(),
+      last_name: modal.el.querySelector("#em-last").value.trim(),
       phone: modal.el.querySelector("#em-phone").value.trim() || undefined,
       email: modal.el.querySelector("#em-email").value.trim() || undefined,
       role: modal.el.querySelector("#em-role").value,

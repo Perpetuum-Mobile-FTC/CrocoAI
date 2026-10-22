@@ -3,13 +3,18 @@
 const { normalizePhone } = require("./phone");
 const { isMinor, passwordError } = require("./rules");
 const { TEAM } = require("./team");
+const name = require("./name");
 
 const DEPARTMENTS = ["tehnic", "non-tehnic", "ambele"];
 const GUARDIAN_RELATIONS = ["mama", "tata", "tutore", "altul"];
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Art. 72.3: creating the account with this box ticked is the acceptance of the regulament (replaces Anexa 6).
+const REGULAMENT_ACK_ERROR = "Trebuie să accepți Regulamentul intern ca să-ți faci cont (Art. 72.3).";
 
 const FIELD_LABELS = {
   full_name: "numele complet",
+  first_name: "prenumele",
+  last_name: "numele de familie",
   phone: "telefon",
   email: "email",
   birthdate: "data nașterii",
@@ -22,6 +27,7 @@ const FIELD_LABELS = {
   guardian_phone: "telefonul părintelui/tutorelui",
   motivation: "motivația",
   gdpr_ack: "confirmarea informării GDPR",
+  regulament_ack: "acceptarea Regulamentului intern",
   guardian_ack: "acordul părintelui/tutorelui",
   username: "username",
   password: "parola",
@@ -66,12 +72,7 @@ function validateProfile(input, { mode = "admin" } = {}) {
   const errors = {};
   const value = {};
 
-  const name = String(data.full_name || "").trim();
-  if (!name || name.split(/\s+/).filter(Boolean).length < 2) {
-    errors.full_name = "Introdu numele complet (prenume și nume).";
-  } else {
-    value.full_name = name;
-  }
+  validateName(data, errors, value);
 
   const digits = data.phone ? normalizePhone(data.phone) : null;
   if (!digits) errors.phone = "Numărul de telefon nu este valid.";
@@ -128,6 +129,8 @@ function validateProfile(input, { mode = "admin" } = {}) {
   if (mode === "public" || mode === "completion") {
     if (!data.gdpr_ack) errors.gdpr_ack = "Trebuie să confirmi că ai citit informarea privind prelucrarea datelor.";
     else value.gdpr_ack = true;
+    if (!data.regulament_ack) errors.regulament_ack = REGULAMENT_ACK_ERROR;
+    else value.regulament_ack = true;
     if (minor) {
       if (!data.guardian_ack) errors.guardian_ack = "Este nevoie de acordul părintelui/tutorelui.";
       else value.guardian_ack = true;
@@ -135,6 +138,20 @@ function validateProfile(input, { mode = "admin" } = {}) {
   }
 
   return { ok: Object.keys(errors).length === 0, errors, value };
+}
+
+// The name on a form: first_name + last_name (normalized, full_name composed). A client that still sends a
+// single full_name (old cached page, API) gets it normalized for capitalization only, parts left NULL.
+function validateName(data, errors, value) {
+  if (name.hasParts(data) || !data.full_name) {
+    const r = name.validateNameParts(data);
+    Object.assign(errors, r.errors);
+    Object.assign(value, r.value);
+    return;
+  }
+  const full = name.normalizeNamePart(data.full_name);
+  if (full.split(" ").length < 2) errors.full_name = "Introdu numele complet (prenume și nume).";
+  else value.full_name = full;
 }
 
 // mode "register": per-role field table. Returns value.requested_role (leadership roles apply
@@ -154,9 +171,7 @@ function validateRegistration(input) {
   const mentor = choice === "mentor";
   value.is_mentor = mentor;
 
-  const name = String(data.full_name || "").trim();
-  if (name.split(/\s+/).filter(Boolean).length < 2) errors.full_name = "Introdu numele complet (prenume și nume).";
-  else value.full_name = name;
+  validateName(data, errors, value);
 
   const digits = data.phone ? normalizePhone(data.phone) : null;
   if (!digits) errors.phone = "Numărul de telefon nu este valid.";
@@ -231,6 +246,8 @@ function validateRegistration(input) {
 
   if (!data.gdpr_ack) errors.gdpr_ack = "Trebuie să confirmi că ai citit informarea privind prelucrarea datelor.";
   else value.gdpr_ack = true;
+  if (!data.regulament_ack) errors.regulament_ack = REGULAMENT_ACK_ERROR;
+  else value.regulament_ack = true;
   if (minor) {
     if (!data.guardian_ack) errors.guardian_ack = "Este nevoie de acordul părintelui/tutorelui.";
     else value.guardian_ack = true;
@@ -240,7 +257,8 @@ function validateRegistration(input) {
 }
 
 // „Contul meu”: the fields a member edits on their own account (members.updateOwn). Partial: only the keys sent.
-// Name, phone (the bot's identity, verified), department and role stay with the leaders.
+// Prenume + Nume de familie (sent together, full_name recomposed). Phone (the bot's identity, verified),
+// department and role stay with the leaders.
 // birthdate stays with leaders: it decides the minor documents (Art. 14.2) and the guardian requirement.
 // A school listed in TEAM.schoolEmailDomains requires its students' email on that domain.
 function schoolEmailError(school, email) {
@@ -249,11 +267,16 @@ function schoolEmailError(school, email) {
   return null;
 }
 
-const OWN_EDITABLE = ["email", "class", "school"];
+const OWN_EDITABLE = ["first_name", "last_name", "email", "class", "school"];
 function validateOwnEdit(input) {
   const data = input || {};
   const errors = {};
   const value = {};
+  if (name.hasParts(data)) {
+    const r = name.validateNameParts(data);
+    Object.assign(errors, r.errors);
+    Object.assign(value, r.value);
+  }
   if (data.email !== undefined) {
     const email = String(data.email || "").trim();
     if (email && !EMAIL_RE.test(email)) errors.email = "Adresa de email nu este validă.";

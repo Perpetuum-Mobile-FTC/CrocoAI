@@ -6,7 +6,10 @@ const db = require("../db");
 const { DomainError } = require("../domain/errors");
 const { assertCan } = require("../domain/policy");
 const profile = require("../domain/profile");
+const nameDomain = require("../domain/name");
 const membersSvc = require("./members");
+const documentsSvc = require("./documents");
+const regulament = require("./regulament");
 const { randomPassword } = require("./username");
 const waGateway = require("./wa-gateway");
 const waQueue = require("./wa-queue");
@@ -70,8 +73,12 @@ function getByToken(token) {
   const member = membersSvc.getRaw(row.member_id);
   if (!member) throw new DomainError("NOT_FOUND", "Link invalid sau expirat.");
   const guardian = db.prepare("SELECT * FROM guardians WHERE member_id = ? ORDER BY id LIMIT 1").get(member.id);
+  const parts = member.first_name && member.last_name
+    ? { first_name: member.first_name, last_name: member.last_name }
+    : nameDomain.splitForPrefill(member.full_name); // a guess the member checks on the form, never stored as such
   return {
     full_name: member.full_name,
+    ...parts,
     phone: membersSvc.hasPhone(member) ? member.phone : "",
     email: member.email,
     birthdate: member.birthdate,
@@ -98,12 +105,14 @@ async function submit(token, input) {
   const other = db.prepare("SELECT id FROM members WHERE phone = ? AND id != ?").get(v.phone, member.id);
   if (other) throw new DomainError("INVALID", "Alt membru folosește deja acest telefon.", null, { phone: "Alt membru folosește deja acest telefon." });
 
+  // Parts from the form; an old cached page sends only full_name (capitalization only, parts kept if same name).
+  const names = v.first_name ? v : nameDomain.legacyNameColumns(v.full_name, member);
   // A3: a phone typed on a public link is not verified - WhatsApp reminders stop until a leader sets it.
   db.prepare(`
-    UPDATE members SET full_name=?, phone=?, email=?, birthdate=?, class=?, school=?, department=?,
+    UPDATE members SET full_name=?, first_name=?, last_name=?, phone=?, email=?, birthdate=?, class=?, school=?, department=?,
       phone_verified_at = CASE WHEN phone = ? THEN phone_verified_at END
     WHERE id=?
-  `).run(v.full_name, v.phone, v.email, v.birthdate, v.class, v.school, v.department, v.phone, member.id);
+  `).run(names.full_name, names.first_name, names.last_name, v.phone, v.email, v.birthdate, v.class, v.school, v.department, v.phone, member.id);
 
   const selfActor = { id: member.id, role: member.role };
   if (v.is_minor) {
@@ -112,6 +121,8 @@ async function submit(token, input) {
     if (existing) membersSvc.updateGuardian(selfActor, existing.id, gdata);
     else membersSvc.addGuardian(selfActor, member.id, gdata);
   }
+
+  documentsSvc.recordRegulamentAcceptance(member.id, { at: new Date().toISOString(), version: regulament.version(), guardian: v.is_minor });
 
   db.prepare("UPDATE completion_tokens SET used_at = strftime('%Y-%m-%dT%H:%M:%fZ','now') WHERE id = ?").run(row.id);
 

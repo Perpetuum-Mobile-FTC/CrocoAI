@@ -18,7 +18,7 @@ Decizii Luca (2026-10-11):
 | Câmp | Elevi (toate rolurile în afară de mentor) | Mentor |
 |---|---|---|
 | `role_choice` ∈ recrut, membru, head_tech, head_nontech, co_leader, team_leader, mentor | * | * |
-| `full_name` (2+ cuvinte), `phone` (unic) | * | * |
+| `first_name` + `last_name` (1–60 litere/spațiu/cratimă/apostrof, normalizate; `full_name` compus — `domain/name.js`), `phone` (unic) | * | * |
 | `username` `^[a-z0-9.-]{3,30}$`, unic (case-insensitive) | * | * |
 | `password` ≥ 8 caractere, `password_confirm` identic | * | * |
 | `email` valid, unic; `@eminescusm.ro` dacă școala = CN Mihai Eminescu | * | * (orice) |

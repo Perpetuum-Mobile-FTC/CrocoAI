@@ -38,6 +38,7 @@ const EXPECTED = {
   "members.change_role": [["self", { member_id: SELF }, ACTIVE(["team_leader"])], ["other", { member_id: OTHER }, ANY]],
   "members.view_contacts": [["other", { id: OTHER }, ACTIVE(OVERSIGHT)], ["self", { id: SELF }, ANY], ["-", undefined, ACTIVE(OVERSIGHT)]],
   "members.view_directory": T(ANY),
+  "members.view_activity": T(ACTIVE(OVERSIGHT)),
   "attendance.mark": [["-", undefined, ACTIVE(MANAGERS)], ["dept", { dept: "tehnic" }, ACTIVE(MANAGERS)]],
   "attendance.view_all": T(ACTIVE(OVERSIGHT)),
   "attendance.view_stats": [["other", { member_id: OTHER }, ACTIVE(OVERSIGHT)], ["self", { member_id: SELF }, ANY]],

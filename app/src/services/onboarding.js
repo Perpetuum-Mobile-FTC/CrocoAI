@@ -7,6 +7,7 @@ const db = require("../db");
 const { DomainError } = require("../domain/errors");
 const { assertCan } = require("../domain/policy");
 const { normalizePhone } = require("../domain/phone");
+const nameDomain = require("../domain/name");
 const { ONBOARDING_STEPS, ONBOARDING_CHECK_DAYS } = require("../domain/rules");
 const membersSvc = require("./members");
 const documentsSvc = require("./documents");
@@ -86,9 +87,14 @@ function confirmareText(draft) {
 const CORRECTION_FIELDS = { nume: STEP.NUME, clasa: STEP.CLASA, scoala: STEP.SCOALA, email: STEP.EMAIL, data: STEP.DATA, departament: STEP.DEPARTAMENT };
 
 // ── LEADERS start the process from the platform ───────────────────────────
-function start(actor, { name, phone, department, buddy_id } = {}) {
+// Name: first_name + last_name (web UI) or a legacy single `name` (old clients; normalized by members.create).
+function start(actor, { name, first_name, last_name, phone, department, buddy_id } = {}) {
   assertCan(actor, "onboarding.start");
-  if (!name || !name.trim()) throw new DomainError("INVALID", "Numele e obligatoriu.");
+  const nameData = first_name !== undefined || last_name !== undefined || !name ? { first_name, last_name } : { name };
+  if (!nameData.name) {
+    const { errors } = nameDomain.validateNameParts(nameData);
+    if (Object.keys(errors).length) throw new DomainError("INVALID", Object.values(errors)[0], null, errors);
+  }
   const digits = normalizePhone(phone);
   if (!digits) throw new DomainError("INVALID", "Telefon invalid.");
   if (db.prepare("SELECT 1 FROM members WHERE phone = ?").get(digits)) {
@@ -101,7 +107,8 @@ function start(actor, { name, phone, department, buddy_id } = {}) {
     if (!buddy) throw new DomainError("NOT_FOUND", "Buddy negăsit.");
   }
 
-  const created = membersSvc.create(actor, { name: name.trim(), phone: digits, role: "volunteer", department: department || "ambele" });
+  const created = membersSvc.create(actor, { ...nameData, phone: digits, role: "volunteer", department: department || "ambele" });
+  const fullName = membersSvc.getRaw(created.id).full_name;
   db.prepare("UPDATE members SET onboarding_step = ? WHERE id = ?").run(STEP.NUME, created.id);
 
   const info = db.prepare(`
@@ -113,8 +120,8 @@ function start(actor, { name, phone, department, buddy_id } = {}) {
   }
   if (buddy) {
     tick(onboardingId, "buddy", actor.id);
-    notifications.create(buddy.id, "onboarding_buddy", "Ai fost desemnat buddy", `Ești buddy pentru ${created.name || name.trim()} în primele ședințe (Art. 43.2).`, `/membri/${created.id}`);
-    waGateway.sendWhatsApp(buddy.phone, `Ai fost desemnat buddy pentru ${name.trim()}, voluntar nou în echipă. Îl/o însoțești în primele ședințe (Art. 43.2).`);
+    notifications.create(buddy.id, "onboarding_buddy", "Ai fost desemnat buddy", `Ești buddy pentru ${fullName} în primele ședințe (Art. 43.2).`, `/membri/${created.id}`);
+    waGateway.sendWhatsApp(buddy.phone, `Ai fost desemnat buddy pentru ${fullName}, voluntar nou în echipă. Îl/o însoțești în primele ședințe (Art. 43.2).`);
   }
 
   waGateway.sendWhatsApp(digits, welcomeText());
@@ -228,10 +235,12 @@ function advance(member, onboarding, draft, nextStep) {
 }
 
 async function complete(member, onboarding, draft) {
+  // The dialog asks for one full name: capitalization normalized, parts kept only if it is the same name.
+  const names = nameDomain.legacyNameColumns(draft.name, member);
   db.prepare(`
-    UPDATE members SET full_name = ?, class = ?, school = ?, email = ?, birthdate = ?, department = ?
+    UPDATE members SET full_name = ?, first_name = ?, last_name = ?, class = ?, school = ?, email = ?, birthdate = ?, department = ?
     WHERE id = ?
-  `).run(draft.name, draft.class, draft.school, draft.email, draft.birthdate, draft.department, member.id);
+  `).run(names.full_name, names.first_name, names.last_name, draft.class, draft.school, draft.email, draft.birthdate, draft.department, member.id);
 
   const password = randomPassword();
   const hash = bcrypt.hashSync(password, 10);

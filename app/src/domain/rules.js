@@ -26,6 +26,8 @@ const TOTAL_DISCUSSION_THRESHOLD = 5; // Art. 20.3: TL + mentor discussion at th
 const COMPETITION_LEVELS = ["regional", "national", "international"];
 const DEFAULT_COMPETITION_LEVEL = "regional";
 const MANDATORY_COMPETITION_LEVELS = ["regional", "national"]; // Art. 22.1
+// „Văzut ultima dată”: an authenticated request updates members.last_seen_at at most this often.
+const LAST_SEEN_RESOLUTION_MS = 60 * 60 * 1000;
 const MIN_SESSIONS_FOR_PCT_SIGNAL = 4; // Art. 20.1, avoid noise with too few data points
 
 // Season id "2026-2027" for any date between 2026-09-01 and 2027-08-31 (sep -> aug).
@@ -294,6 +296,7 @@ const TASK_TITLE_MAX = 200;
 const MAX_ACTIVE_REMINDERS_PER_MEMBER = 20;
 
 module.exports = {
+  LAST_SEEN_RESOLUTION_MS,
   RETENTION,
   MEDICAL_DESTRUCTION,
   PASSWORD_MIN,

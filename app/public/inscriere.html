@@ -85,9 +85,13 @@
         <div class="field-error" id="err-role_choice"></div>
         <p class="muted small hidden" id="role-note">Rolurile de conducere și de mentor se confirmă de Team Leader / Co-Leader; până atunci contul tău e de Membru.</p>
 
-        <label class="field-label" for="full_name">Nume complet*</label>
-        <input class="input" id="full_name" autocomplete="name">
-        <div class="field-error" id="err-full_name"></div>
+        <label class="field-label" for="first_name">Prenume*</label>
+        <input class="input" id="first_name" autocomplete="given-name" maxlength="60">
+        <div class="field-error" id="err-first_name"></div>
+
+        <label class="field-label" for="last_name">Nume de familie*</label>
+        <input class="input" id="last_name" autocomplete="family-name" maxlength="60">
+        <div class="field-error" id="err-last_name"></div>
 
         <label class="field-label" for="phone">Telefon (WhatsApp)*</label>
         <input class="input" id="phone" type="tel" autocomplete="tel" inputmode="tel">
@@ -174,13 +178,19 @@
         </div>
         <div class="field-error" id="err-gdpr_ack"></div>
 
+        <div class="checkbox-row">
+          <input type="checkbox" id="regulament_ack">
+          <label for="regulament_ack">Am citit și accept <a href="#" id="open-regulament">Regulamentul intern</a> al echipei și mă angajez să-l respect*</label>
+        </div>
+        <div class="field-error" id="err-regulament_ack"></div>
+
         <div class="checkbox-row hidden" id="guardian-ack-row">
           <input type="checkbox" id="guardian_ack">
-          <label for="guardian_ack">Părintele/tutorele meu a citit informarea și este de acord*</label>
+          <label for="guardian_ack">Părintele/tutorele meu a citit informarea și regulamentul și este de acord*</label>
         </div>
         <div class="field-error" id="err-guardian_ack"></div>
 
-        <p class="muted small">Acordurile de mai sus nu înlocuiesc documentele semnate (Anexa 5, Anexa 6 etc.) — ți se va cere să le semnezi în platformă.</p>
+        <p class="muted small">Acceptarea regulamentului ține loc de Anexa 6 (Art. 72.3). Celelalte documente (Anexa 5 etc.) ți se vor cere în platformă.</p>
 
         <button class="btn" id="submit-btn" type="button">Creează contul</button>
         <div class="login-error" id="form-error"></div>

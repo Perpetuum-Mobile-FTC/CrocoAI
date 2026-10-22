@@ -20,7 +20,7 @@ function student(over = {}) {
     role_choice: "membru", full_name: "Ana Popescu", phone: `4073${String(1000000 + seq)}`,
     username: `ana.user${seq}`, password: "parola1234", password_confirm: "parola1234",
     email: `ana${seq}@eminescusm.ro`, school: "CN Mihai Eminescu", class: "a XI-a B",
-    birthdate: yearsAgo(17 + 1), department: "tehnic", gdpr_ack: true, ...over,
+    birthdate: yearsAgo(17 + 1), department: "tehnic", gdpr_ack: true, regulament_ack: true, ...over,
   };
 }
 function mentor(over = {}) {
@@ -28,7 +28,7 @@ function mentor(over = {}) {
   return {
     role_choice: "mentor", full_name: "Mihai Mentor", phone: `4073${String(1000000 + seq)}`,
     username: `mentor.${seq}`, password: "parola1234", password_confirm: "parola1234",
-    email: `mentor${seq}@gmail.com`, gdpr_ack: true, ...over,
+    email: `mentor${seq}@gmail.com`, gdpr_ack: true, regulament_ack: true, ...over,
   };
 }
 // Since security package A3 the account is created only after the WhatsApp code: this helper runs both
@@ -189,6 +189,32 @@ test("audit row in applications with status inregistrat", async () => {
   assert.ok(a.gdpr_ack_at);
   assert.match(a.ip_hash, /^[0-9a-f]{64}$/);
   assert.equal(a.motivation, "");
+});
+
+test("Art. 72.3: no regulament box -> refused; ticked -> approved Anexa 6 without a file, version + time stored", async () => {
+  const refused = await post(student({ regulament_ack: false }));
+  assert.equal(refused.status, 400);
+  assert.ok((await refused.json()).errors.regulament_ack);
+
+  const body = student();
+  assert.equal((await post(body)).status, 200);
+  const m = memberBy(body.username);
+  const a = db.prepare("SELECT * FROM applications WHERE created_member_id = ?").get(m.id);
+  assert.ok(a.regulament_ack_at);
+  assert.equal(a.regulament_version, "1.0");
+  const doc = db.prepare("SELECT * FROM member_documents WHERE member_id = ? AND type_key = 'anexa6_regulament'").get(m.id);
+  assert.equal(doc.status, "aprobat");
+  assert.equal(doc.file_path, null);
+  assert.match(doc.review_note, /Art\. 72\.3.*v1\.0/);
+});
+
+test("Art. 72.3: GET /api/public/regulament serves the text and version without login", async () => {
+  const res = await fetch(`${BASE}/api/public/regulament`);
+  assert.equal(res.status, 200);
+  const d = await res.json();
+  assert.equal(d.version, "1.0");
+  assert.match(d.content, /Art\. 72 — Acceptarea regulamentului/);
+  assert.doesNotMatch(d.content, /Vendorizat/);
 });
 
 test("rate limit counts only successes: 35 invalid then a valid one -> 200; 31st success -> 429", async () => {

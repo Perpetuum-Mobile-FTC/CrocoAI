@@ -958,5 +958,5 @@ a.btn, a.btn:hover { text-decoration: none; }
 }
 
 /* License attribution on the login page (NOTICE.md) */
-.credit { text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); }
+.credit { text-align: center; color: var(--text-muted); font-size: 0.85rem; margin-top: 16px; }
 .credit a { color: inherit; text-decoration: underline; display: inline-block; min-height: 44px; line-height: 44px; }

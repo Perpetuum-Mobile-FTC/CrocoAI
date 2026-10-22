@@ -68,6 +68,7 @@ function docCard(d) {
       </div>
       <p class="muted small">${esc(d.who_signs || "")} ${d.article ? `· ${linkifyArticles(d.article)}` : ""}</p>
       ${d.document && d.document.status === "respins" && d.document.review_note ? `<p class="doc-review-note">Motiv respingere: ${esc(d.document.review_note)}</p>` : ""}
+      ${d.document && !d.document.file_path && d.document.review_note ? `<p class="muted small">${esc(d.document.review_note)}</p>` : ""}
       <div class="doc-card-actions">
         ${d.source ? `<a class="btn btn-ghost btn-small" href="/api/documents/template/${d.key}" target="_blank">Descarcă șablonul</a>` : ""}
         <label class="btn btn-small file-upload-btn">
@@ -122,7 +123,7 @@ async function loadMatrix(pane) {
             ${row.documents.map((d) => `<td><button class="matrix-cell ${STATUS_CLASS[d.status]}"
                 data-member-id="${row.member_id}" data-key="${d.key}" data-status="${d.status}"
                 data-title="${esc(d.title)}" data-document-id="${d.document_id || ""}"
-                data-uploaded-at="${d.uploaded_at || ""}" data-review-note="${esc(d.review_note || "")}" data-can-open="${d.can_open ? 1 : 0}"
+                data-uploaded-at="${d.uploaded_at || ""}" data-review-note="${esc(d.review_note || "")}" data-can-open="${d.can_open ? 1 : 0}" data-electronic="${d.electronic ? 1 : 0}"
               >${STATUS_LABEL[d.status]}</button></td>`).join("")}
           </tr>`).join("")}
         </tbody>
@@ -157,7 +158,9 @@ function openReviewModal(btn, onDone) {
     <h3>${esc(title)}</h3>
     <p class="muted small">Status curent: ${STATUS_LABEL[status].toLowerCase()} ${uploadedAt ? `· încărcat ${fmtDateTime(uploadedAt)}` : ""}</p>
     ${reviewNote ? `<p class="doc-review-note">Notă anterioară: ${esc(reviewNote)}</p>` : ""}
-    ${canOpen
+    ${btn.dataset.electronic === "1"
+      ? `<p class="muted small">Acceptat electronic la crearea contului, fără fișier (Art. 72.3).</p>`
+      : canOpen
       ? `<a class="btn btn-ghost btn-small" href="/api/documents/file/${documentId}" target="_blank">Deschide fișierul</a>`
       : `<p class="doc-review-note">Fișa medicală a altui membru se deschide doar de team leader sau mentor (Art. 58.3, 41.4).</p>`}
     <div class="form" style="margin-top:12px">

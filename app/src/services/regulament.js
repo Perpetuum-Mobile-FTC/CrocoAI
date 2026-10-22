@@ -72,9 +72,20 @@ function search(query, limit = 5) {
   }));
 }
 
+// Version from the header (`**Versiunea:** 1.0`) - stored with every electronic acceptance (Art. 72.3).
+function version() {
+  const m = fs.readFileSync(FILE_PATH, "utf8").match(/^\*\*Versiunea:\*\*\s*(.+?)\s*$/m);
+  return m ? m[1] : null;
+}
+
+// Full text for the public sign-up forms (Art. 72.3: you accept what you could read), without the vendoring comment.
+function publicText() {
+  return fs.readFileSync(FILE_PATH, "utf8").replace(/^<!--[\s\S]*?-->\s*/, "");
+}
+
 // Actor-gated entry points shared by the routes and the AI tool (regulament.read).
 function fullFor(actor) { assertCan(actor, "regulament.read"); return full(); }
 function searchFor(actor, query) { assertCan(actor, "regulament.read"); return search(query || ""); }
 function articleFor(actor, n) { assertCan(actor, "regulament.read"); return get(n); }
 
-module.exports = { parse, get, full, search, fullFor, searchFor, articleFor };
+module.exports = { parse, get, full, search, fullFor, searchFor, articleFor, version, publicText };

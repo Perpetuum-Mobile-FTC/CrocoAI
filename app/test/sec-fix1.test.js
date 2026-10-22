@@ -24,7 +24,7 @@ function form(over = {}) {
   return {
     role_choice: "membru", full_name: "Ana Popescu", phone: `4075${String(1000000 + seq)}`, username: `fix.user${seq}`,
     password: "parola1234", password_confirm: "parola1234", email: `fix${seq}@eminescusm.ro`, school: "CN Mihai Eminescu",
-    class: "a XI-a B", birthdate: "2008-01-01", department: "tehnic", gdpr_ack: true, ...over,
+    class: "a XI-a B", birthdate: "2008-01-01", department: "tehnic", gdpr_ack: true, regulament_ack: true, ...over,
   };
 }
 const post = (url, body, ip) => fetch(`${BASE}/api/public${url}`, {

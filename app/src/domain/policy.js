@@ -69,6 +69,7 @@ const CHECKS = {
   "members.change_role": (actor, t) => !!actor && !!t && (!isSelf(actor, t.member_id) || CHECKS["members.manage_privileged"](actor)),
   "members.view_contacts": (actor, target) => isOversight(actor) || isSelf(actor, target && target.id),
   "members.view_directory": (actor) => !!actor,
+  "members.view_activity": (actor) => isOversight(actor), // „văzut ultima dată” of other members
   // target (optional): { dept } of the session. Heads are MANAGERS already; headOf kept explicit.
   "attendance.mark": (actor, t) => isManager(actor) || (!!t && headOf(actor, t.dept)),
   "attendance.view_all": (actor) => isOversight(actor),

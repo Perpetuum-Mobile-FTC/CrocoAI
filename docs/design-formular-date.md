@@ -7,7 +7,7 @@ din Admin/Membri și de agentul AI.
 
 ## 1. Schema unică de profil — `src/domain/profile.js` (nou)
 Câmpuri (etichete RO, validare, obligativitate):
-- Persoană: `full_name`* (2+ cuvinte), `phone`* (normalizat cu `domain/phone`, unic), `email`* (format valid),
+- Persoană: `first_name`* + `last_name`* (2026-10-22, `domain/name.js`; `full_name` = „Prenume Nume”; un `full_name` singur de la clienți vechi e acceptat, doar cu majusculele normalizate), `phone`* (normalizat cu `domain/phone`, unic), `email`* (format valid),
   `birthdate`* (dd.mm.yyyy sau ISO; vârstă 10–25 plauzibilă), `class`* (ex. „a IX-a B”), `school`*, `department`* (`tehnic|non-tehnic|ambele`).
 - Părinte/tutore — **obligatoriu dacă minor** (`rules.isMinor`): `guardian_name`*, `guardian_relation`* (mamă/tată/tutore/altul),
   `guardian_phone`*, `guardian_email` (opțional). Se salvează în `guardians`.

@@ -18,7 +18,7 @@ async function reg(over = {}) {
     role_choice: "membru", full_name: "Ana Popescu", phone: `4074${String(1000000 + seq)}`,
     username: `auto.user${seq}`, password: "parola1234", password_confirm: "parola1234",
     email: `auto${seq}@eminescusm.ro`, school: "CN Mihai Eminescu", class: "a XI-a B",
-    birthdate: "2008-01-01", department: "non-tehnic", gdpr_ack: true, ...over,
+    birthdate: "2008-01-01", department: "non-tehnic", gdpr_ack: true, regulament_ack: true, ...over,
   }, ip);
   const code = env.waSent[env.waSent.length - 1].text.match(/\b(\d{6})\b/)[1];
   return registration.verify(pending_id, code, ip);

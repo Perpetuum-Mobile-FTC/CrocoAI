@@ -15,6 +15,8 @@ const assignmentsSvc = require("./assignments");
 const waGateway = require("./wa-gateway");
 const { ipKey } = require("../domain/ip");
 const rules = require("../domain/rules");
+const documentsSvc = require("./documents");
+const regulament = require("./regulament");
 
 function hashIp(ip) {
   return crypto.createHash("sha256").update(ipKey(ip)).digest("hex"); // IPv6 grouped by /64
@@ -212,10 +214,10 @@ function createMember(v, hash, ip, verifiedAt) {
 
   const memberId = db.transaction(() => {
     const id = db.prepare(`
-      INSERT INTO members (full_name, username, phone, email, department, class, school, birthdate, role, auth_role,
+      INSERT INTO members (full_name, first_name, last_name, username, phone, email, department, class, school, birthdate, role, auth_role,
         requested_role, status, must_change_password, password_hash, joined_at, phone_verified_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activ', 0, ?, ?, ?)
-    `).run(v.full_name, v.username, v.phone, v.email, v.department, v.class || null, v.school || null, v.birthdate || null,
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activ', 0, ?, ?, ?)
+    `).run(v.full_name, v.first_name || null, v.last_name || null, v.username, v.phone, v.email, v.department, v.class || null, v.school || null, v.birthdate || null,
       v.role, v.role, v.requested_role, hash, now, verifiedAt).lastInsertRowid;
 
     if (v.guardian_name) {
@@ -226,13 +228,15 @@ function createMember(v, hash, ip, verifiedAt) {
     // Audit trail (consents + hashed IP). applications has NOT NULL columns from the old flow,
     // so fields that don't apply (mentors) are stored as ''.
     db.prepare(`
-      INSERT INTO applications (full_name, phone, email, birthdate, class, school, department,
+      INSERT INTO applications (full_name, first_name, last_name, phone, email, birthdate, class, school, department,
         guardian_name, guardian_relation, guardian_phone, guardian_email, motivation,
-        gdpr_ack_at, guardian_ack_at, status, created_member_id, ip_hash)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'inregistrat', ?, ?)
-    `).run(v.full_name, v.phone, v.email, v.birthdate || "", v.class || "", v.school || "", v.department,
+        gdpr_ack_at, guardian_ack_at, regulament_ack_at, regulament_version, status, created_member_id, ip_hash)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'inregistrat', ?, ?)
+    `).run(v.full_name, v.first_name || null, v.last_name || null, v.phone, v.email, v.birthdate || "", v.class || "", v.school || "", v.department,
       v.guardian_name || null, v.guardian_relation || null, v.guardian_phone || null, v.guardian_email || null,
-      v.motivation || "", now, v.is_minor ? now : null, id, hashIp(ip));
+      v.motivation || "", now, v.is_minor ? now : null, v.regulament_ack ? now : null, v.regulament_ack ? regulament.version() : null, id, hashIp(ip));
+    // A registration started before Art. 72.3 (no box in its stored data) still signs Anexa 6.
+    if (v.regulament_ack) documentsSvc.recordRegulamentAcceptance(id, { at: now, version: regulament.version(), guardian: v.is_minor });
     return id;
   })();
 

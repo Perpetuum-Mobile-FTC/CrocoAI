@@ -18,7 +18,7 @@ function form(over = {}) {
   seq++;
   return {
     role_choice: "mentor", full_name: "Mihai Mentor", phone: `4076${String(1000000 + seq)}`, username: `fix2.user${seq}`,
-    password: "parola1234", password_confirm: "parola1234", email: `fix2${seq}@gmail.com`, gdpr_ack: true, ...over,
+    password: "parola1234", password_confirm: "parola1234", email: `fix2${seq}@gmail.com`, gdpr_ack: true, regulament_ack: true, ...over,
   };
 }
 const post = (body, ip) => fetch(`${BASE}/api/public/register`, {

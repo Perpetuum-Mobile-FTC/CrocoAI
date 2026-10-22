@@ -1,4 +1,4 @@
-<!-- Vendorizat din moldluca/perpetuum-docs:regulament/regulament-intern.md la 2026-10-16. Nu edita direct -- ruleaza scripts/sync-regulament.sh. -->
+<!-- Vendorizat din moldluca/perpetuum-docs:regulament/regulament-intern.md la 2026-10-22. Nu edita direct -- ruleaza scripts/sync-regulament.sh. -->
 
 # REGULAMENT INTERN
 ## Echipa de Robotică FTC — Perpetuum Mobile
@@ -152,7 +152,7 @@ Alumni & Îndrumători (rol consultativ extern)
 
 14.2. Candidatul acceptat dobândește statutul de **voluntar** și semnează, la intrarea în echipă:
 
-- Anexa 5 (Acord de confidențialitate) și Anexa 6 (Formular acceptare regulament);
+- Anexa 5 (Acord de confidențialitate) și Anexa 6 (Formular acceptare regulament) — Anexa 6 nu mai este necesară dacă regulamentul a fost acceptat electronic pe platforma CrocoAI (Art. 72.3);
 - Anexa 13 (Acord consimțământ foto/video) și Anexa 15 (Fișă medicală și contact de urgență);
 - declarațiile cerute de **Asociația Nație prin Educație** (Program Delivery Partner FTC România): declarația de informare despre FIRST Policies, declarația de consimțământ pentru prelucrarea datelor participanților și declarația de consimțământ pentru prelucrarea imaginii.
 
@@ -909,9 +909,11 @@ Prezentul regulament intră în vigoare la **data semnării** de către Team Lea
 71.3. Modificările se consemnează printr-o nouă versiune a documentului, cu număr de versiune actualizat.
 
 **Art. 72 — Acceptarea regulamentului**
-72.1. Fiecare persoană care intră în echipă (ca voluntar sau în orice alt rol) semnează Anexa 6 (Formular acceptare regulament), prin care confirmă că a citit și acceptă prezentul regulament.
+72.1. Fiecare persoană care intră în echipă (ca voluntar sau în orice alt rol) acceptă prezentul regulament fie prin semnarea Anexei 6 (Formular acceptare regulament), fie prin confirmarea electronică de la Art. 72.3.
 
-72.2. Nesemnarea Anexei 6 echivalează cu neacceptarea regulamentului și împiedică participarea la activitățile echipei.
+72.2. Neacceptarea regulamentului prin una dintre modalitățile de la Art. 72.1 împiedică participarea la activitățile echipei.
+
+72.3. Crearea unui cont pe platforma CrocoAI și bifarea, la înscriere, a confirmării „Am citit și accept Regulamentul intern” constituie acceptarea prezentului regulament și angajamentul de a-l respecta, cu același efect ca semnarea Anexei 6. Pentru minori, confirmarea se dă și de părinte/tutore. Platforma păstrează data confirmării și versiunea regulamentului acceptat.
 
 ---
 

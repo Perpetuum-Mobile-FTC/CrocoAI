@@ -7,6 +7,7 @@ const { passwordError } = require("../domain/rules");
 const { normalizePhone } = require("../domain/phone");
 const { generateUsername, randomPassword } = require("./username");
 const profile = require("../domain/profile");
+const nameDomain = require("../domain/name");
 const documents = require("./documents");
 const auditLog = require("./audit-log");
 
@@ -40,6 +41,18 @@ function hasPhone(member) {
 // set by a leader, or an account that existed before verification - migration 022). null = in-app only.
 function whatsappPhone(member) {
   return hasPhone(member) && member.phone_verified_at ? member.phone : null;
+}
+
+// The name columns to write: first_name + last_name (validated, normalized, full_name composed) or a legacy single
+// `name` (CSV/vCard import, old clients: capitalization only, parts NULL unless it is the same name). null = neither sent.
+function nameColumns(data, current = {}) {
+  if (nameDomain.hasParts(data)) {
+    const r = nameDomain.validateNameParts(data);
+    if (Object.keys(r.errors).length) throw new DomainError("INVALID", Object.values(r.errors)[0], null, r.errors);
+    return r.value;
+  }
+  if (data && data.name != null && String(data.name).trim()) return nameDomain.legacyNameColumns(data.name, current);
+  return null;
 }
 
 function bumpTokenVersion(memberId) {
@@ -81,9 +94,11 @@ function adminList(actor) {
 function listDirectory(actor) {
   assertCan(actor, "members.view_directory");
   const rows = db.prepare(`
-    SELECT id, full_name AS name, role, department, status, class, school
+    SELECT id, full_name AS name, role, department, status, class, school, last_seen_at
     FROM members ORDER BY full_name COLLATE NOCASE
   `).all();
+  const seeActivity = can(actor, "members.view_activity");
+  for (const r of rows) if (!seeActivity) delete r.last_seen_at;
   const teamRows = db.prepare("SELECT member_id, team_id FROM team_members").all();
   const teamsByMember = new Map();
   for (const t of teamRows) {
@@ -111,6 +126,8 @@ function getProfile(actor, id) {
   const base = {
     id: m.id,
     name: m.full_name,
+    first_name: m.first_name,
+    last_name: m.last_name,
     username: m.username,
     role: m.role,
     department: m.department,
@@ -119,6 +136,7 @@ function getProfile(actor, id) {
     joined_at: m.joined_at,
     left_at: m.left_at,
     notes: can(actor, "members.manage") ? m.notes : undefined,
+    last_seen_at: can(actor, "members.view_activity") ? m.last_seen_at : undefined,
   };
   if (can(actor, "members.view_contacts", m)) {
     Object.assign(base, toContactFields(m));
@@ -128,8 +146,8 @@ function getProfile(actor, id) {
 
 function create(actor, data) {
   assertCan(actor, "members.manage");
-  const { name, phone, role, email, department, class: cls, school, birthdate } = data || {};
-  if (!name || !name.trim()) throw new DomainError("INVALID", "Numele e obligatoriu.");
+  const { phone, role, email, department, class: cls, school, birthdate } = data || {};
+  const names = nameColumns(data) || nameColumns({ first_name: "", last_name: "" }); // the second one throws
   const finalRole = VALID_ROLES.includes(role) ? role : "volunteer";
   assertCanTouchRole(actor, finalRole);
   let digits = null;
@@ -141,23 +159,24 @@ function create(actor, data) {
     }
   }
   const finalPhone = digits || `pending-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-  const username = generateUsername(name);
+  const username = generateUsername(names.full_name);
   // A1: random temporary password, shown once to the leader; must be changed at first login.
   const password = randomPassword();
   const hash = bcrypt.hashSync(password, 10);
   // A phone typed in by a leader counts as verified (only self-registration needs the WhatsApp code).
   const info = db.prepare(`
-    INSERT INTO members (full_name, username, phone, email, department, class, school, birthdate, role, auth_role, status, must_change_password, password_hash, joined_at, phone_verified_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activ', 1, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'), CASE WHEN ? THEN strftime('%Y-%m-%dT%H:%M:%fZ','now') END)
-  `).run(name.trim(), username, finalPhone, email || null, department || "ambele", cls || null, school || null, birthdate || null, finalRole, finalRole, hash, digits ? 1 : 0);
-  return { id: info.lastInsertRowid, username, password };
+    INSERT INTO members (full_name, first_name, last_name, username, phone, email, department, class, school, birthdate, role, auth_role, status, must_change_password, password_hash, joined_at, phone_verified_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'activ', 1, ?, strftime('%Y-%m-%dT%H:%M:%fZ','now'), CASE WHEN ? THEN strftime('%Y-%m-%dT%H:%M:%fZ','now') END)
+  `).run(names.full_name, names.first_name || null, names.last_name || null, username, finalPhone, email || null, department || "ambele", cls || null, school || null, birthdate || null, finalRole, finalRole, hash, digits ? 1 : 0);
+  return { id: info.lastInsertRowid, name: names.full_name, username, password };
 }
 
 function update(actor, id, data) {
   assertCan(actor, "members.manage");
   const m = requireRaw(id);
   assertCanEditAccount(actor, m);
-  const { name, phone, role, email, department, notes, class: cls, school, birthdate } = data || {};
+  const { phone, role, email, department, notes, class: cls, school, birthdate } = data || {};
+  const names = nameColumns(data, m) || { full_name: m.full_name, first_name: m.first_name, last_name: m.last_name };
   let digits = m.phone;
   if (phone !== undefined && phone !== null) {
     digits = normalizePhone(phone);
@@ -172,12 +191,12 @@ function update(actor, id, data) {
     assertNotLastTeamLeader(m);
   }
   db.prepare(`
-    UPDATE members SET requested_role = CASE WHEN ? THEN NULL ELSE requested_role END, full_name=?, phone=?, role=?, auth_role=?, email=?, department=?, notes=?, class=?, school=?, birthdate=?,
+    UPDATE members SET requested_role = CASE WHEN ? THEN NULL ELSE requested_role END, full_name=?, first_name=?, last_name=?, phone=?, role=?, auth_role=?, email=?, department=?, notes=?, class=?, school=?, birthdate=?,
       phone_verified_at = CASE WHEN ? THEN strftime('%Y-%m-%dT%H:%M:%fZ','now') ELSE phone_verified_at END
     WHERE id = ?
   `).run(
     finalRole !== m.role ? 1 : 0,
-    name !== undefined ? name : m.full_name,
+    names.full_name, names.first_name, names.last_name,
     digits,
     finalRole, finalRole,
     email !== undefined ? email : m.email,
@@ -192,7 +211,7 @@ function update(actor, id, data) {
   return getRaw(id);
 }
 
-// „Contul meu”: the owner edits their own non-identity fields (profile.OWN_EDITABLE), policy members.edit_account.
+// „Contul meu”: the owner edits their own fields (Prenume + Nume de familie, email, school, class) (profile.OWN_EDITABLE), policy members.edit_account.
 function updateOwn(actor, data) {
   const m = requireRaw(actor.id);
   assertCanEditAccount(actor, m);
@@ -205,7 +224,8 @@ function updateOwn(actor, data) {
   const fields = Object.keys(result.value);
   if (fields.length) {
     db.prepare(`UPDATE members SET ${fields.map((f) => `${f} = @${f}`).join(", ")} WHERE id = @id`).run({ ...result.value, id: m.id });
-    auditLog.record({ actor, action: "profile.self_edit", member_id: m.id, object_type: "member", object_id: m.id, detail: fields.join(",") });
+    const detail = fields.filter((f) => f !== "full_name").join(","); // full_name is recomposed from the parts
+    auditLog.record({ actor, action: "profile.self_edit", member_id: m.id, object_type: "member", object_id: m.id, detail });
   }
   return getProfile(actor, m.id);
 }
@@ -313,7 +333,7 @@ function previewImport(actor, rows) {
     const digits = row.phone ? normalizePhone(row.phone) : null;
     const existing = digits ? existingByPhone.get(digits) : null;
     return {
-      name: row.name || null,
+      name: row.name ? nameDomain.normalizeNamePart(row.name) : null, // one name column: capitalization only
       phone: digits,
       email: row.email || null,
       action: !digits ? "skip_invalid_phone" : existing ? "update" : "create",

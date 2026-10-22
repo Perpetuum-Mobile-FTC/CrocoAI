@@ -1,4 +1,4 @@
-<!-- Vendorizat din moldluca/perpetuum-docs:regulament/anexe.md la 2026-10-16. Nu edita direct -- ruleaza scripts/sync-regulament.sh. -->
+<!-- Vendorizat din moldluca/perpetuum-docs:regulament/anexe.md la 2026-10-22. Nu edita direct -- ruleaza scripts/sync-regulament.sh. -->
 
 # ANEXE — Regulament Intern Echipă Robotică FTC
 ## Perpetuum Mobile
@@ -163,6 +163,8 @@ Semnătură: _______________________  Data: ___________
 **Semnătura:** _______________________
 
 **Luat la cunoștință de Team Leader:** _______________________  Data: ___________
+
+*Formularul nu mai este necesar dacă regulamentul a fost acceptat electronic, la crearea contului pe platforma CrocoAI (Art. 72.3).*
 
 ---
 

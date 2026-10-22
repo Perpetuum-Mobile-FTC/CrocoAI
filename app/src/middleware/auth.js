@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const db = require("../db");
+const { LAST_SEEN_RESOLUTION_MS } = require("../domain/rules");
 
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 if (process.env.NODE_ENV === "production" && !process.env.JWT_SECRET) throw new Error("JWT_SECRET is required in production");
@@ -40,6 +41,14 @@ function clearAuthCookie(res) {
   res.clearCookie(HINT_COOKIE);
 }
 
+// „Văzut ultima dată”: one write per member per LAST_SEEN_RESOLUTION_MS, not one per request.
+function touchLastSeen(member, now = Date.now()) {
+  const last = member.last_seen_at ? Date.parse(member.last_seen_at) : 0;
+  if (now - last < LAST_SEEN_RESOLUTION_MS) return;
+  member.last_seen_at = new Date(now).toISOString();
+  db.prepare("UPDATE members SET last_seen_at = ? WHERE id = ?").run(member.last_seen_at, member.id);
+}
+
 // Requires a valid session; attaches req.user (member row). Checks token_version so that a
 // password change/reset/deactivation invalidates every other session immediately.
 function requireAuth(req, res, next) {
@@ -56,6 +65,7 @@ function requireAuth(req, res, next) {
       return res.status(403).json({ error: "Trebuie să îți schimbi parola înainte de a continua.", code: "MUST_CHANGE_PASSWORD" });
     }
     req.user = member;
+    touchLastSeen(member);
     if (!req.cookies[HINT_COOKIE]) setHintCookie(res); // sessions from before the hint cookie existed
     next();
   } catch (err) {

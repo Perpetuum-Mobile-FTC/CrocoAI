@@ -78,7 +78,7 @@ function baseApplication(overrides = {}) {
     school: "Liceul Testului",
     department: "tehnic",
     motivation: "Vreau să fac parte din echipă.",
-    gdpr_ack: true,
+    gdpr_ack: true, regulament_ack: true,
     ...overrides,
   };
 }
@@ -304,7 +304,7 @@ test("completion link: create (LEADERS only), prefill, update, no credentials fo
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       full_name: "Registration Membru Actualizat", phone: "40700004002", email: "updated@exemplu.ro",
-      birthdate: ADULT_BIRTHDATE, class: "a XII-a", school: "Liceul X", department: "ambele", gdpr_ack: true,
+      birthdate: ADULT_BIRTHDATE, class: "a XII-a", school: "Liceul X", department: "ambele", gdpr_ack: true, regulament_ack: true,
     }),
   });
   const submitBody = await submitRes.json();
@@ -338,7 +338,7 @@ test("completion link: never-logged-in member gets fresh credentials sent over W
 
   const submitRes = await fetch(`${BASE}/api/public/completion/${token}`, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ full_name: "Voluntar Fara Login", phone, email: "vol@exemplu.ro", birthdate: ADULT_BIRTHDATE, class: "a XII-a", school: "Liceul X", department: "tehnic", gdpr_ack: true }),
+    body: JSON.stringify({ full_name: "Voluntar Fara Login", phone, email: "vol@exemplu.ro", birthdate: ADULT_BIRTHDATE, class: "a XII-a", school: "Liceul X", department: "tehnic", gdpr_ack: true, regulament_ack: true }),
   });
   const body = await submitRes.json();
   assert.equal(submitRes.status, 200, JSON.stringify(body));

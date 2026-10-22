@@ -133,7 +133,7 @@ test("/inscriere: gateway down -> 'nu este disponibilă', no quota used; not on 
     const d = new Date(); d.setFullYear(d.getFullYear() - 18);
     return { role_choice: "membru", full_name: "Ana Popescu", phone: `4074${String(2000000 + n)}`, username: `ux2.user${n}`,
       password: "parola1234", password_confirm: "parola1234", email: `ux2${n}@eminescusm.ro`, school: "CN Mihai Eminescu",
-      class: "a XI-a B", birthdate: d.toISOString().slice(0, 10), department: "tehnic", gdpr_ack: true };
+      class: "a XI-a B", birthdate: d.toISOString().slice(0, 10), department: "tehnic", gdpr_ack: true, regulament_ack: true };
   };
   const sends = () => db.prepare("SELECT COUNT(*) c FROM otp_sends").get().c;
   const before = sends();
